@@ -1,6 +1,7 @@
 package com.carmen.mijuego.input;
 
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
@@ -9,195 +10,193 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class Controls implements InputProcessor {
 
-    private final Viewport viewport;
+    public boolean leftPressed;
+    public boolean rightPressed;
+    public boolean jumpPressed;
+    public boolean shootPressed;
+    public boolean grenadePressed;
+    public boolean pausePressed;
 
-    private final Texture btnLeft, btnRight, btnGrenade, btnShoot, btnJump, btnPause;
+    private final Texture left;
+    private final Texture right;
+    private final Texture jump;
+    private final Texture shoot;
+    private final Texture grenade;
+    private final Texture pause;
 
     private final Rectangle rLeft = new Rectangle();
     private final Rectangle rRight = new Rectangle();
-    private final Rectangle rGrenade = new Rectangle();
-    private final Rectangle rShoot = new Rectangle();
     private final Rectangle rJump = new Rectangle();
+    private final Rectangle rShoot = new Rectangle();
+    private final Rectangle rGrenade = new Rectangle();
     private final Rectangle rPause = new Rectangle();
 
-    public boolean leftPressed, rightPressed;
-    public boolean jumpPressed, shootPressed, grenadePressed, pausePressed;
+    private final Vector2 touch = new Vector2();
+    private final Viewport viewport;
 
+    // Multitouch: un dedo por botón
     private int leftPointer = -1;
     private int rightPointer = -1;
+    private int jumpPointer = -1;
+    private int shootPointer = -1;
+    private int grenadePointer = -1;
+    private int pausePointer = -1;
 
-    private final Vector2 touchWorld = new Vector2();
+    // Oscurecer al pulsar (1 = normal, <1 = más oscuro)
+    private static final float PRESSED_TINT = 0.75f;
 
-    private float uiSize = 120f;
-    private float uiMargin = 25f;
-    private float uiGap = 18f;
-    private float pauseSize = 90f;
-
-    private static final float PRESSED = 0.7f;
-
-    public Controls(Viewport viewport) {
+    public Controls(Viewport viewport,
+                    Texture left, Texture right, Texture jump,
+                    Texture shoot, Texture grenade, Texture pause) {
         this.viewport = viewport;
-
-        btnLeft    = new Texture("ui/controls/btn_move_left.png");
-        btnRight   = new Texture("ui/controls/btn_move_right.png");
-        btnGrenade = new Texture("ui/controls/btn_grenade.png");
-        btnShoot   = new Texture("ui/controls/btn_shoot.png");
-        btnJump    = new Texture("ui/controls/btn_jump.png");
-        btnPause   = new Texture("ui/controls/btn_pause.png");
-
-        setLinear(btnLeft);
-        setLinear(btnRight);
-        setLinear(btnGrenade);
-        setLinear(btnShoot);
-        setLinear(btnJump);
-        setLinear(btnPause);
+        this.left = left;
+        this.right = right;
+        this.jump = jump;
+        this.shoot = shoot;
+        this.grenade = grenade;
+        this.pause = pause;
     }
 
-    private void setLinear(Texture t) {
-        t.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-    }
+    /**
+     * Coloca el HUD relativo a la cámara (anclado a la pantalla visible).
+     * Layout pedido:
+     * - left: borde izquierdo abajo
+     * - right: a la derecha de left
+     * - jump: borde derecho abajo
+     * - shoot: a la izquierda de jump
+     * - grenade: encima de left
+     * - pause: arriba a la derecha (sin función aún)
+     */
+    public void updateLayout(OrthographicCamera cam, Viewport vp) {
+        float worldW = vp.getWorldWidth();
+        float worldH = vp.getWorldHeight();
 
-    public void updateLayout(float worldW, float worldH) {
-        float leftX = uiMargin;
-        float leftY = uiMargin;
+        float camLeft   = cam.position.x - worldW / 2f;
+        float camRight  = cam.position.x + worldW / 2f;
+        float camBottom = cam.position.y - worldH / 2f;
+        float camTop    = cam.position.y + worldH / 2f;
 
-        float grenadeX = leftX;
-        float grenadeY = leftY + uiSize + uiGap;
+        // Tamaños relativos (adaptables)
+        float size = worldH * 0.105f;     // un poco más pequeño
+        float gap  = worldH * 0.018f;
 
-        float rightX = worldW - uiMargin - uiSize;
-        float rightY = uiMargin;
+        // Margen seguro para evitar cortes con FillViewport
+        float safePadX = worldW * 0.03f;
+        float safePadY = worldH * 0.05f;  // más margen vertical (donde suele recortar)
 
-        float jumpX = rightX;
-        float jumpY = rightY + uiSize + uiGap;
+        // Ajustes que me pides:
+        float bottomRaise = worldH * 0.045f; // subir controles de abajo
+        float pauseDrop   = worldH * 0.055f; // bajar pause
 
-        float shootX = rightX - uiGap - uiSize;
-        float shootY = rightY;
+        float bottomY = camBottom + safePadY + bottomRaise;
 
-        float pauseX = worldW - uiMargin - pauseSize;
-        float pauseY = worldH - uiMargin - pauseSize;
+        // Izquierda (abajo izquierda)
+        rLeft.set(camLeft + safePadX, bottomY, size, size);
 
-        rLeft.set(leftX, leftY, uiSize, uiSize);
-        rGrenade.set(grenadeX, grenadeY, uiSize, uiSize);
+        // Derecha (a la derecha de izquierda)
+        rRight.set(rLeft.x + size + gap, bottomY, size, size);
 
-        rRight.set(rightX, rightY, uiSize, uiSize);
-        rJump.set(jumpX, jumpY, uiSize, uiSize);
-        rShoot.set(shootX, shootY, uiSize, uiSize);
+        // Saltar (abajo derecha)
+        rJump.set(camRight - safePadX - size, bottomY, size, size);
 
+        // Disparar (a la izquierda del salto)
+        rShoot.set(rJump.x - gap - size, bottomY, size, size);
+
+        // Granada (encima de izquierda)
+        rGrenade.set(rLeft.x, bottomY + size + gap, size, size);
+
+        // Pause (arriba derecha) pero un poco más abajo y un poco más pequeño
+        float pauseSize = size * 0.82f;
+        float pauseX = camRight - safePadX - pauseSize;
+        float pauseY = camTop - safePadY - pauseSize - pauseDrop;
         rPause.set(pauseX, pauseY, pauseSize, pauseSize);
     }
 
+
+
     public void draw(SpriteBatch batch) {
-        if (leftPressed) batch.setColor(PRESSED, PRESSED, PRESSED, 1f);
-        batch.draw(btnLeft, rLeft.x, rLeft.y, rLeft.width, rLeft.height);
-        batch.setColor(1f, 1f, 1f, 1f);
+        drawButton(batch, left, rLeft, leftPressed);
+        drawButton(batch, right, rRight, rightPressed);
+        drawButton(batch, jump, rJump, jumpPressed);
+        drawButton(batch, shoot, rShoot, shootPressed);
+        drawButton(batch, grenade, rGrenade, grenadePressed);
+        drawButton(batch, pause, rPause, pausePressed);
+    }
 
-        if (grenadePressed) batch.setColor(PRESSED, PRESSED, PRESSED, 1f);
-        batch.draw(btnGrenade, rGrenade.x, rGrenade.y, rGrenade.width, rGrenade.height);
-        batch.setColor(1f, 1f, 1f, 1f);
-
-        if (rightPressed) batch.setColor(PRESSED, PRESSED, PRESSED, 1f);
-        batch.draw(btnRight, rRight.x, rRight.y, rRight.width, rRight.height);
-        batch.setColor(1f, 1f, 1f, 1f);
-
-        if (jumpPressed) batch.setColor(PRESSED, PRESSED, PRESSED, 1f);
-        batch.draw(btnJump, rJump.x, rJump.y, rJump.width, rJump.height);
-        batch.setColor(1f, 1f, 1f, 1f);
-
-        if (shootPressed) batch.setColor(PRESSED, PRESSED, PRESSED, 1f);
-        batch.draw(btnShoot, rShoot.x, rShoot.y, rShoot.width, rShoot.height);
-        batch.setColor(1f, 1f, 1f, 1f);
-
-        if (pausePressed) batch.setColor(PRESSED, PRESSED, PRESSED, 1f);
-        batch.draw(btnPause, rPause.x, rPause.y, rPause.width, rPause.height);
-        batch.setColor(1f, 1f, 1f, 1f);
+    private void drawButton(SpriteBatch batch, Texture tex, Rectangle r, boolean pressed) {
+        if (pressed) batch.setColor(PRESSED_TINT, PRESSED_TINT, PRESSED_TINT, 1f);
+        batch.draw(tex, r.x, r.y, r.width, r.height);
+        if (pressed) batch.setColor(1f, 1f, 1f, 1f);
     }
 
     private void unproject(int screenX, int screenY) {
-        touchWorld.set(screenX, screenY);
-        viewport.unproject(touchWorld);
+        touch.set(screenX, screenY);
+        viewport.unproject(touch);
     }
 
-    private void clearActionButtons() {
-        jumpPressed = false;
-        shootPressed = false;
-        grenadePressed = false;
-        pausePressed = false;
+    private void releasePointer(int pointer) {
+        if (pointer == leftPointer) { leftPointer = -1; leftPressed = false; }
+        if (pointer == rightPointer) { rightPointer = -1; rightPressed = false; }
+        if (pointer == jumpPointer) { jumpPointer = -1; jumpPressed = false; }
+        if (pointer == shootPointer) { shootPointer = -1; shootPressed = false; }
+        if (pointer == grenadePointer) { grenadePointer = -1; grenadePressed = false; }
+        if (pointer == pausePointer) { pausePointer = -1; pausePressed = false; }
     }
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         unproject(screenX, screenY);
 
-        if (rLeft.contains(touchWorld) && leftPointer == -1) {
-            leftPressed = true;
+        if (leftPointer == -1 && rLeft.contains(touch)) {
             leftPointer = pointer;
+            leftPressed = true;
             return true;
         }
-        if (rRight.contains(touchWorld) && rightPointer == -1) {
-            rightPressed = true;
+        if (rightPointer == -1 && rRight.contains(touch)) {
             rightPointer = pointer;
+            rightPressed = true;
             return true;
         }
-
-        if (rJump.contains(touchWorld))    { jumpPressed = true; return true; }
-        if (rShoot.contains(touchWorld))   { shootPressed = true; return true; }
-        if (rGrenade.contains(touchWorld)) { grenadePressed = true; return true; }
-        if (rPause.contains(touchWorld))   { pausePressed = true; return true; }
+        if (jumpPointer == -1 && rJump.contains(touch)) {
+            jumpPointer = pointer;
+            jumpPressed = true;
+            return true;
+        }
+        if (shootPointer == -1 && rShoot.contains(touch)) {
+            shootPointer = pointer;
+            shootPressed = true;
+            return true;
+        }
+        if (grenadePointer == -1 && rGrenade.contains(touch)) {
+            grenadePointer = pointer;
+            grenadePressed = true;
+            return true;
+        }
+        if (pausePointer == -1 && rPause.contains(touch)) {
+            pausePointer = pointer;
+            pausePressed = true;
+            return true;
+        }
 
         return false;
     }
 
     @Override
-    public boolean touchDragged(int screenX, int screenY, int pointer) {
-        unproject(screenX, screenY);
-
-        if (pointer == leftPointer && !rLeft.contains(touchWorld)) {
-            leftPressed = false;
-            leftPointer = -1;
-        }
-        if (pointer == rightPointer && !rRight.contains(touchWorld)) {
-            rightPressed = false;
-            rightPointer = -1;
-        }
-        return true;
-    }
-
-    @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        if (pointer == leftPointer) {
-            leftPressed = false;
-            leftPointer = -1;
-        }
-        if (pointer == rightPointer) {
-            rightPressed = false;
-            rightPointer = -1;
-        }
-
-        clearActionButtons();
+        releasePointer(pointer);
         return true;
     }
-
 
     @Override
     public boolean touchCancelled(int screenX, int screenY, int pointer, int button) {
-        clearActionButtons();
-        leftPressed = false; rightPressed = false;
-        leftPointer = -1; rightPointer = -1;
+        releasePointer(pointer);
         return true;
     }
 
     @Override public boolean keyDown(int keycode) { return false; }
     @Override public boolean keyUp(int keycode) { return false; }
     @Override public boolean keyTyped(char character) { return false; }
+    @Override public boolean touchDragged(int screenX, int screenY, int pointer) { return false; }
     @Override public boolean mouseMoved(int screenX, int screenY) { return false; }
     @Override public boolean scrolled(float amountX, float amountY) { return false; }
-
-    public void dispose() {
-        btnLeft.dispose();
-        btnRight.dispose();
-        btnGrenade.dispose();
-        btnShoot.dispose();
-        btnJump.dispose();
-        btnPause.dispose();
-    }
 }
