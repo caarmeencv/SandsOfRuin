@@ -1,0 +1,2 @@
+ffmpeg video.mp4 -vf
+"colorkey=0x00D600:0.2:0.0" frame_%04d.png
