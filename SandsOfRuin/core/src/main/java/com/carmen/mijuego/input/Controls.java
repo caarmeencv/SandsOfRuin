@@ -42,7 +42,7 @@ public class Controls implements InputProcessor {
     private int grenadePointer = -1;
     private int pausePointer = -1;
 
-    // Oscurecer al pulsar (1 = normal, <1 = más oscuro)
+    // Oscurecer al pulsar
     private static final float PRESSED_TINT = 0.75f;
 
     public Controls(Viewport viewport,
@@ -58,14 +58,7 @@ public class Controls implements InputProcessor {
     }
 
     /**
-     * Coloca el HUD relativo a la cámara (anclado a la pantalla visible).
-     * Layout pedido:
-     * - left: borde izquierdo abajo
-     * - right: a la derecha de left
-     * - jump: borde derecho abajo
-     * - shoot: a la izquierda de jump
-     * - grenade: encima de left
-     * - pause: arriba a la derecha (sin función aún)
+     * HUD relativo a la cámara (anclado a la pantalla visible).
      */
     public void updateLayout(OrthographicCamera cam, Viewport vp) {
         float worldW = vp.getWorldWidth();
@@ -77,23 +70,23 @@ public class Controls implements InputProcessor {
         float camTop    = cam.position.y + worldH / 2f;
 
         // Tamaños relativos (adaptables)
-        float size = worldH * 0.105f;     // un poco más pequeño
+        float size = worldH * 0.105f;
         float gap  = worldH * 0.018f;
 
-        // Margen seguro para evitar cortes con FillViewport
+        // Márgenes seguros para FillViewport (evita recortes en móviles raros)
         float safePadX = worldW * 0.03f;
-        float safePadY = worldH * 0.05f;  // más margen vertical (donde suele recortar)
+        float safePadY = worldH * 0.05f;
 
-        // Ajustes que me pides:
-        float bottomRaise = worldH * 0.045f; // subir controles de abajo
-        float pauseDrop   = worldH * 0.055f; // bajar pause
+        // Ajustes: subir controles abajo + bajar pause
+        float bottomRaise = worldH * 0.045f;
+        float pauseDrop   = worldH * 0.055f;
 
         float bottomY = camBottom + safePadY + bottomRaise;
 
         // Izquierda (abajo izquierda)
         rLeft.set(camLeft + safePadX, bottomY, size, size);
 
-        // Derecha (a la derecha de izquierda)
+        // Derecha
         rRight.set(rLeft.x + size + gap, bottomY, size, size);
 
         // Saltar (abajo derecha)
@@ -105,14 +98,12 @@ public class Controls implements InputProcessor {
         // Granada (encima de izquierda)
         rGrenade.set(rLeft.x, bottomY + size + gap, size, size);
 
-        // Pause (arriba derecha) pero un poco más abajo y un poco más pequeño
+        // Pause (arriba derecha, un poco más pequeño)
         float pauseSize = size * 0.82f;
         float pauseX = camRight - safePadX - pauseSize;
         float pauseY = camTop - safePadY - pauseSize - pauseDrop;
         rPause.set(pauseX, pauseY, pauseSize, pauseSize);
     }
-
-
 
     public void draw(SpriteBatch batch) {
         drawButton(batch, left, rLeft, leftPressed);

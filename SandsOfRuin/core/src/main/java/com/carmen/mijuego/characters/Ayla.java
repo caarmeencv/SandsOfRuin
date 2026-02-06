@@ -16,23 +16,46 @@ public class Ayla {
     private static final float GRAVITY = -1800f;
     private static final float JUMP = 800f;
 
+    private final Texture idleTex;
+    private final Texture jumpTex;
+
     private Animation<TextureRegion> runAnim;
     private float stateTime;
 
-    private float scale = 0.4f;
+    // Más pequeña:
+    private float scale = 0.60f;
     private float width, height;
 
     private float lastDx;
 
-    public Ayla(Texture runSheet, float startX, float startY) {
+    // Frames reales del run sheet
+    private static final int FRAME_W = 336;
+    private static final int FRAME_H = 411;
+
+    public Ayla(Texture runSheet, Texture idle, Texture jump, float startX, float startY) {
+        this.idleTex = idle;
+        this.jumpTex = jump;
+
         x = startX;
         y = startY;
 
-        int FRAME_W = 464;
-        int FRAME_H = 688;
+        int cols = runSheet.getWidth() / FRAME_W;
+        int rows = runSheet.getHeight() / FRAME_H;
+
+        if (cols <= 0 || rows <= 0) {
+            throw new IllegalArgumentException(
+                "Spritesheet Ayla demasiado pequeño. Sheet=" +
+                    runSheet.getWidth() + "x" + runSheet.getHeight() +
+                    " frame=" + FRAME_W + "x" + FRAME_H
+            );
+        }
 
         TextureRegion[][] split = TextureRegion.split(runSheet, FRAME_W, FRAME_H);
-        runAnim = new Animation<>(0.1f, split[0]);
+
+        TextureRegion[] frames = new TextureRegion[cols];
+        for (int i = 0; i < cols; i++) frames[i] = split[0][i];
+
+        runAnim = new Animation<>(0.10f, frames);
 
         width = FRAME_W * scale;
         height = FRAME_H * scale;
@@ -66,14 +89,35 @@ public class Ayla {
         else stateTime = 0;
     }
 
-    public void draw(SpriteBatch batch) {
+    // El nivel empuja a Ayla: no puede estar por detrás de minX
+    public void pushMinX(float minX) {
+        if (x < minX) {
+            x = minX;
+        }
+    }
+
+    public void draw(SpriteBatch batch, boolean moving) {
+        if (!onGround) {
+            drawTexture(batch, jumpTex);
+            return;
+        }
+
+        if (!moving) {
+            drawTexture(batch, idleTex);
+            return;
+        }
+
         TextureRegion frame = runAnim.getKeyFrame(stateTime, true);
-        if (facingRight)
-            batch.draw(frame, x, y, width, height);
-        else
-            batch.draw(frame, x + width, y, -width, height);
+        if (facingRight) batch.draw(frame, x, y, width, height);
+        else batch.draw(frame, x + width, y, -width, height);
+    }
+
+    private void drawTexture(SpriteBatch batch, Texture tex) {
+        if (facingRight) batch.draw(tex, x, y, width, height);
+        else batch.draw(tex, x + width, y, -width, height);
     }
 
     public float getLastDx() { return lastDx; }
     public float getX() { return x; }
+    public boolean isOnGround() { return onGround; }
 }

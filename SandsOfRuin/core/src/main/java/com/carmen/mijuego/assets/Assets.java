@@ -4,15 +4,11 @@ import com.badlogic.gdx.assets.AssetDescriptor;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Texture;
 
-/**
- * Gestor central de recursos.
- * Carga y reutiliza texturas desde AssetManager.
- */
 public class Assets {
 
     private final AssetManager manager;
 
-    // ===== DESCRIPTORS (los nombres coinciden con DesertScreen) =====
+    // ===== DESERT =====
     public static final AssetDescriptor<Texture> SKY =
         new AssetDescriptor<>(AssetPaths.BG_DESERT_SKY, Texture.class);
     public static final AssetDescriptor<Texture> CLOUDS =
@@ -24,9 +20,15 @@ public class Assets {
     public static final AssetDescriptor<Texture> NEAR =
         new AssetDescriptor<>(AssetPaths.BG_DESERT_NEAR, Texture.class);
 
+    // ===== AYLA =====
     public static final AssetDescriptor<Texture> AYLA_RUN =
         new AssetDescriptor<>(AssetPaths.AYLA_RUN, Texture.class);
+    public static final AssetDescriptor<Texture> AYLA_IDLE =
+        new AssetDescriptor<>(AssetPaths.AYLA_IDLE, Texture.class);
+    public static final AssetDescriptor<Texture> AYLA_JUMP =
+        new AssetDescriptor<>(AssetPaths.AYLA_JUMP, Texture.class);
 
+    // ===== UI =====
     public static final AssetDescriptor<Texture> UI_LEFT =
         new AssetDescriptor<>(AssetPaths.UI_LEFT, Texture.class);
     public static final AssetDescriptor<Texture> UI_RIGHT =
@@ -40,6 +42,7 @@ public class Assets {
     public static final AssetDescriptor<Texture> UI_PAUSE =
         new AssetDescriptor<>(AssetPaths.UI_PAUSE, Texture.class);
 
+    // ===== SCREENS =====
     public static final AssetDescriptor<Texture> SCREEN_INTRO =
         new AssetDescriptor<>(AssetPaths.SCREEN_INTRO, Texture.class);
 
@@ -59,14 +62,19 @@ public class Assets {
     }
 
     public void queueLoadAll() {
+        // Desert
         manager.load(SKY);
         manager.load(CLOUDS);
         manager.load(RUINS);
         manager.load(MID);
         manager.load(NEAR);
 
+        // Ayla
         manager.load(AYLA_RUN);
+        manager.load(AYLA_IDLE);
+        manager.load(AYLA_JUMP);
 
+        // UI
         manager.load(UI_LEFT);
         manager.load(UI_RIGHT);
         manager.load(UI_JUMP);
@@ -74,6 +82,7 @@ public class Assets {
         manager.load(UI_GRENADE);
         manager.load(UI_PAUSE);
 
+        // Screens
         manager.load(SCREEN_INTRO);
 
         manager.load(SCREEN_MENU_BG);
@@ -107,14 +116,19 @@ public class Assets {
     }
 
     private void applyDefaultFilters() {
+        // Desert
         setLinear(SKY);
         setLinear(CLOUDS);
         setLinear(RUINS);
         setLinear(MID);
         setLinear(NEAR);
 
+        // Ayla
         setLinear(AYLA_RUN);
+        setLinear(AYLA_IDLE);
+        setLinear(AYLA_JUMP);
 
+        // UI
         setLinear(UI_LEFT);
         setLinear(UI_RIGHT);
         setLinear(UI_JUMP);
@@ -122,6 +136,7 @@ public class Assets {
         setLinear(UI_GRENADE);
         setLinear(UI_PAUSE);
 
+        // Screens
         setLinear(SCREEN_INTRO);
 
         setLinear(SCREEN_MENU_BG);
