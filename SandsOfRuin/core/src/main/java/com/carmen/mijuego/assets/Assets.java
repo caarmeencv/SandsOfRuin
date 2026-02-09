@@ -42,6 +42,10 @@ public class Assets {
     public static final AssetDescriptor<Texture> UI_PAUSE =
         new AssetDescriptor<>(AssetPaths.UI_PAUSE, Texture.class);
 
+    // ===== HUD =====
+    public static final AssetDescriptor<Texture> HUD_HEART_FULL =
+        new AssetDescriptor<>(AssetPaths.HUD_HEART_FULL, Texture.class);
+
     // ===== SCREENS =====
     public static final AssetDescriptor<Texture> SCREEN_INTRO =
         new AssetDescriptor<>(AssetPaths.SCREEN_INTRO, Texture.class);
@@ -56,6 +60,12 @@ public class Assets {
         new AssetDescriptor<>(AssetPaths.SCREEN_MENU_BTN_CREDITS, Texture.class);
     public static final AssetDescriptor<Texture> SCREEN_MENU_BTN_ACHIEVEMENTS =
         new AssetDescriptor<>(AssetPaths.SCREEN_MENU_BTN_ACHIEVEMENTS, Texture.class);
+
+    // ===== ENEMIES =====
+    public static final AssetDescriptor<Texture> CACTUS_PINK =
+        new AssetDescriptor<>(AssetPaths.CACTUS_PINK, Texture.class);
+    public static final AssetDescriptor<Texture> CACTUS_YELLOW =
+        new AssetDescriptor<>(AssetPaths.CACTUS_YELLOW, Texture.class);
 
     public Assets() {
         this.manager = new AssetManager();
@@ -82,14 +92,20 @@ public class Assets {
         manager.load(UI_GRENADE);
         manager.load(UI_PAUSE);
 
+        // HUD
+        manager.load(HUD_HEART_FULL);
+
         // Screens
         manager.load(SCREEN_INTRO);
-
         manager.load(SCREEN_MENU_BG);
         manager.load(SCREEN_MENU_BTN_GAME);
         manager.load(SCREEN_MENU_BTN_OPTIONS);
         manager.load(SCREEN_MENU_BTN_CREDITS);
         manager.load(SCREEN_MENU_BTN_ACHIEVEMENTS);
+
+        // Enemies
+        manager.load(CACTUS_PINK);
+        manager.load(CACTUS_YELLOW);
     }
 
     public void finishLoading() {
@@ -136,14 +152,20 @@ public class Assets {
         setLinear(UI_GRENADE);
         setLinear(UI_PAUSE);
 
+        // HUD
+        setLinear(HUD_HEART_FULL);
+
         // Screens
         setLinear(SCREEN_INTRO);
-
         setLinear(SCREEN_MENU_BG);
         setLinear(SCREEN_MENU_BTN_GAME);
         setLinear(SCREEN_MENU_BTN_OPTIONS);
         setLinear(SCREEN_MENU_BTN_CREDITS);
         setLinear(SCREEN_MENU_BTN_ACHIEVEMENTS);
+
+        // Enemies
+        setLinear(CACTUS_PINK);
+        setLinear(CACTUS_YELLOW);
     }
 
     private void setLinear(AssetDescriptor<Texture> desc) {

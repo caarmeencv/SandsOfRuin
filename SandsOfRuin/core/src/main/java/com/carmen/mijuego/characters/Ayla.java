@@ -4,7 +4,6 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.MathUtils;
 
 public class Ayla {
 
@@ -12,23 +11,18 @@ public class Ayla {
     private boolean facingRight = true;
     private boolean onGround = false;
 
-    private static final float SPEED = 260f;
     private static final float GRAVITY = -1800f;
     private static final float JUMP = 800f;
 
     private final Texture idleTex;
     private final Texture jumpTex;
 
-    private Animation<TextureRegion> runAnim;
+    private final Animation<TextureRegion> runAnim;
     private float stateTime;
 
-    // Más pequeña:
-    private float scale = 0.60f;
-    private float width, height;
+    private final float scale = 0.60f;
+    private final float width, height;
 
-    private float lastDx;
-
-    // Frames reales del run sheet
     private static final int FRAME_W = 336;
     private static final int FRAME_H = 411;
 
@@ -36,22 +30,13 @@ public class Ayla {
         this.idleTex = idle;
         this.jumpTex = jump;
 
-        x = startX;
-        y = startY;
+        this.x = startX;
+        this.y = startY;
 
         int cols = runSheet.getWidth() / FRAME_W;
-        int rows = runSheet.getHeight() / FRAME_H;
-
-        if (cols <= 0 || rows <= 0) {
-            throw new IllegalArgumentException(
-                "Spritesheet Ayla demasiado pequeño. Sheet=" +
-                    runSheet.getWidth() + "x" + runSheet.getHeight() +
-                    " frame=" + FRAME_W + "x" + FRAME_H
-            );
-        }
+        if (cols <= 0) throw new IllegalArgumentException("Spritesheet Ayla inválido");
 
         TextureRegion[][] split = TextureRegion.split(runSheet, FRAME_W, FRAME_H);
-
         TextureRegion[] frames = new TextureRegion[cols];
         for (int i = 0; i < cols; i++) frames[i] = split[0][i];
 
@@ -61,15 +46,12 @@ public class Ayla {
         height = FRAME_H * scale;
     }
 
+    // Ayla NO mueve X: solo salto + animación
     public void update(float delta, boolean left, boolean right, boolean jump, float groundY) {
-        float oldX = x;
-        boolean moving = false;
+        boolean moving = (left ^ right);
 
-        if (right) { x += SPEED * delta; facingRight = true; moving = true; }
-        if (left)  { x -= SPEED * delta; facingRight = false; moving = true; }
-
-        x = MathUtils.clamp(x, -99999, 99999);
-        lastDx = x - oldX;
+        if (right) facingRight = true;
+        if (left)  facingRight = false;
 
         if (jump && onGround) {
             velY = JUMP;
@@ -87,13 +69,6 @@ public class Ayla {
 
         if (moving && onGround) stateTime += delta;
         else stateTime = 0;
-    }
-
-    // El nivel empuja a Ayla: no puede estar por detrás de minX
-    public void pushMinX(float minX) {
-        if (x < minX) {
-            x = minX;
-        }
     }
 
     public void draw(SpriteBatch batch, boolean moving) {
@@ -117,7 +92,6 @@ public class Ayla {
         else batch.draw(tex, x + width, y, -width, height);
     }
 
-    public float getLastDx() { return lastDx; }
+    public void setX(float x) { this.x = x; }
     public float getX() { return x; }
-    public boolean isOnGround() { return onGround; }
 }

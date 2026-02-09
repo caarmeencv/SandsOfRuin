@@ -5,48 +5,65 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.FillViewport;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
 import com.carmen.mijuego.Main;
 import com.carmen.mijuego.assets.Assets;
 import com.carmen.mijuego.characters.Ayla;
+import com.carmen.mijuego.enemies.Cactus;
 import com.carmen.mijuego.input.Controls;
+import com.carmen.mijuego.ui.LivesHUD;
 import com.carmen.mijuego.world.ParallaxBackground;
 
 public class DesertScreen implements Screen {
 
     private static final float WORLD_W = 1280f;
     private static final float WORLD_H = 720f;
-    private static final float GROUND_Y = 120f;
 
-    // Auto-scroll: velocidad del nivel (ajusta a gusto)
-    private static final float LEVEL_SPEED = 260f; // similar al SPEED de Ayla para que “se note”
+    private static final float GROUND_Y = 180f;
 
-    // Margen mínimo: Ayla no puede quedarse más atrás de este punto del avance
-    private static final float BACK_MARGIN = 140f;
+    private static final float SCROLL_SPEED_FORWARD = 320f;
+    private static final float SCROLL_SPEED_BACK    = 260f;
 
-    // Cámara: cuánto “adelantada” va respecto a scrollX
-    private static final float CAMERA_AHEAD = 500f;
+    private static final float AYLA_SCREEN_X = 220f;
+
+    private static final float MID_FACTOR = 0.30f;
+    private static final float PARALLAX_MUL = 0.70f;
+    private static final float MID_REAL = MID_FACTOR * PARALLAX_MUL;
+
+    private static final float CACTUS_MIN_DIST = 600f;
+    private static final float CACTUS_MAX_DIST = 1100f;
+    private static final float CACTUS_SPAWN_MARGIN = 250f;
+    private static final float CACTUS_HEIGHT = 90f;
 
     private final Main game;
     private OrthographicCamera camera;
     private Viewport viewport;
 
     private Texture sky, clouds, ruins, mid, near;
+    private Texture cactusPink, cactusYellow;
+
     private Ayla ayla;
     private Controls controls;
-
     private ParallaxBackground parallax;
 
-    // Avance del nivel
+    private final Array<Cactus> cactuses = new Array<>();
+
     private float scrollX = 0f;
+    private float nextSpawnCamRight = 0f;
+
+    private LivesHUD livesHUD;
 
     public DesertScreen(Main game) {
         this.game = game;
 
         camera = new OrthographicCamera();
-        viewport = new FillViewport(WORLD_W, WORLD_H, camera);
+        // ✅ FitViewport = misma proporción en PC y móvil (sin recortar)
+        viewport = new FitViewport(WORLD_W, WORLD_H, camera);
         viewport.apply();
 
         camera.position.set(WORLD_W / 2f, WORLD_H / 2f, 0f);
@@ -58,11 +75,14 @@ public class DesertScreen implements Screen {
         mid = game.assets.get(Assets.MID);
         near = game.assets.get(Assets.NEAR);
 
+        cactusPink = game.assets.get(Assets.CACTUS_PINK);
+        cactusYellow = game.assets.get(Assets.CACTUS_YELLOW);
+
         ayla = new Ayla(
             game.assets.get(Assets.AYLA_RUN),
             game.assets.get(Assets.AYLA_IDLE),
             game.assets.get(Assets.AYLA_JUMP),
-            120f,
+            0f,
             GROUND_Y
         );
 
@@ -79,70 +99,86 @@ public class DesertScreen implements Screen {
         Gdx.input.setInputProcessor(controls);
         controls.updateLayout(camera, viewport);
 
-        // Parallax: sky fijo + capas con factor
         parallax = new ParallaxBackground(
             camera,
             viewport,
             sky,
-            new Texture[] { clouds, ruins, mid, near },
-            new float[]   { 0.20f,  0.35f, 0.60f, 0.85f }
+            new Texture[]{ clouds, ruins, mid, near },
+            new float[]  { 0.08f, 0.15f, 0.30f, 0.45f }
         );
+        parallax.setSpeedMul(PARALLAX_MUL);
+
+        livesHUD = new LivesHUD(game.assets.get(Assets.HUD_HEART_FULL));
+
+        float camRight = camera.position.x + viewport.getWorldWidth() / 2f;
+        nextSpawnCamRight = camRight + 300f;
     }
 
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0, 1);
 
-        // Input
-        boolean left = Gdx.input.isKeyPressed(Input.Keys.LEFT) || controls.leftPressed;
+        boolean left  = Gdx.input.isKeyPressed(Input.Keys.LEFT)  || controls.leftPressed;
         boolean right = Gdx.input.isKeyPressed(Input.Keys.RIGHT) || controls.rightPressed;
-        boolean jump = Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || controls.jumpPressed;
+        boolean jump  = Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || controls.jumpPressed;
 
         boolean moving = (left ^ right);
 
-        // 1) Avanza el nivel automáticamente
-        scrollX += LEVEL_SPEED * delta;
+        if (right) scrollX += SCROLL_SPEED_FORWARD * delta;
+        if (left)  scrollX -= SCROLL_SPEED_BACK * delta;
+        if (scrollX < 0f) scrollX = 0f;
 
-        // 2) Actualiza Ayla con input normal
-        ayla.update(delta, left, right, jump, GROUND_Y);
-
-        // 3) El scroll “arrastra” a Ayla: no puede quedarse atrás
-        float minAylaX = scrollX + BACK_MARGIN;
-        ayla.pushMinX(minAylaX);
-
-        // Si prefieres “Mario”: si se queda atrás, game over (en vez de empujar)
-        // if (ayla.getX() < minAylaX) { gameOver(); return; }
-
-        // 4) Cámara basada en scroll (no en Ayla)
-        float minCamX = viewport.getWorldWidth() / 2f;
-        float targetCamX = scrollX + CAMERA_AHEAD;
-
-        if (targetCamX < minCamX) targetCamX = minCamX;
-
+        float targetCamX = scrollX + viewport.getWorldWidth() / 2f;
         camera.position.x += (targetCamX - camera.position.x) * 10f * delta;
         camera.update();
+
+        float camLeft  = camera.position.x - viewport.getWorldWidth() / 2f;
+        float camRight = camera.position.x + viewport.getWorldWidth() / 2f;
+        float camTop   = camera.position.y + viewport.getWorldHeight() / 2f;
+
+        ayla.setX(camLeft + AYLA_SCREEN_X);
+        ayla.update(delta, left, right, jump, GROUND_Y);
+
+        float midScroll = scrollX * MID_REAL;
+
+        if (camRight >= nextSpawnCamRight) {
+            Texture tex = MathUtils.randomBoolean() ? cactusPink : cactusYellow;
+
+            float xDrawSpawn = camRight + CACTUS_SPAWN_MARGIN;
+            float cactusWorldX = xDrawSpawn + midScroll;
+
+            cactuses.add(new Cactus(tex, cactusWorldX, GROUND_Y, CACTUS_HEIGHT));
+
+            nextSpawnCamRight = camRight + MathUtils.random(CACTUS_MIN_DIST, CACTUS_MAX_DIST);
+        }
+
+        for (int i = cactuses.size - 1; i >= 0; i--) {
+            if (cactuses.get(i).isOffScreenLeft(camLeft, midScroll)) {
+                cactuses.removeIndex(i);
+            }
+        }
 
         game.batch.setProjectionMatrix(camera.combined);
         controls.updateLayout(camera, viewport);
 
-        // Render
         game.batch.begin();
 
-        // Fondo parallax independiente del jugador
         parallax.render(game.batch, scrollX);
 
-        // Mundo (Ayla) en coordenadas de mundo
+        for (Cactus c : cactuses) c.draw(game.batch, midScroll);
+
         ayla.draw(game.batch, moving);
 
-        // UI (se dibuja con la misma cámara porque tu Controls ya calcula posiciones mundo)
+        livesHUD.draw(game.batch, camLeft, camTop);
+
         controls.draw(game.batch);
 
         game.batch.end();
     }
 
     @Override
-    public void resize(int width, int height) {
-        viewport.update(width, height, true);
+    public void resize(int w, int h) {
+        viewport.update(w, h, true);
         controls.updateLayout(camera, viewport);
     }
 

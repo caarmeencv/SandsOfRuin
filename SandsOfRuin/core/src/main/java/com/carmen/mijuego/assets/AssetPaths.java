@@ -24,6 +24,9 @@ public final class AssetPaths {
     public static final String UI_GRENADE = "ui/controls/btn_grenade.png";
     public static final String UI_PAUSE   = "ui/controls/btn_pause.png";
 
+    // HUD
+    public static final String HUD_HEART_FULL = "ui/hud/heart_full.png";
+
     // Imagen de la pantalla de introduccion
     public static final String SCREEN_INTRO = "screens/intro/IntroScreen.png";
 
@@ -33,4 +36,8 @@ public final class AssetPaths {
     public static final String SCREEN_MENU_BTN_OPTIONS = "screens/menu/OptionsButton.png";
     public static final String SCREEN_MENU_BTN_CREDITS = "screens/menu/CreditsButton.png";
     public static final String SCREEN_MENU_BTN_ACHIEVEMENTS = "screens/menu/AchievementsButton.png";
+
+    // Enemies - Cactus
+    public static final String CACTUS_PINK   = "enemies/cactus/Pink_Cactus.png";
+    public static final String CACTUS_YELLOW = "enemies/cactus/Yellow_Cactus.png";
 }

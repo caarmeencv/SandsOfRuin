@@ -18,12 +18,14 @@ public class ParallaxBackground {
     }
 
     private final OrthographicCamera camera;
-    private final Viewport viewport;
     private final float worldW;
     private final float worldH;
 
-    private final Texture sky;      // fondo fijo (sin parallax)
+    private final Texture sky;      // fondo fijo
     private final Layer[] layers;   // capas con parallax
+
+    // ✅ Multiplicador global para hacer el fondo más lento/rápido sin tocar factores
+    private float speedMul = 1f;
 
     public ParallaxBackground(OrthographicCamera camera, Viewport viewport,
                               Texture sky,
@@ -34,7 +36,6 @@ public class ParallaxBackground {
         }
 
         this.camera = camera;
-        this.viewport = viewport;
         this.worldW = viewport.getWorldWidth();
         this.worldH = viewport.getWorldHeight();
 
@@ -46,24 +47,33 @@ public class ParallaxBackground {
         }
     }
 
+    public void setSpeedMul(float speedMul) {
+        this.speedMul = speedMul;
+    }
+
     public void render(SpriteBatch batch, float scrollX) {
         float camLeft = camera.position.x - worldW * 0.5f;
 
-        // Cielo fijo (no hace parallax, solo “sigue” la cámara)
+        // Cielo fijo (sigue cámara)
         batch.draw(sky, camLeft, 0f, worldW, worldH);
 
         // Capas con parallax tileadas
         for (Layer layer : layers) {
-            drawTiled(batch, layer.tex, camLeft, scrollX * layer.factor);
+            float layerOffset = scrollX * layer.factor * speedMul;
+            drawTiled(batch, layer.tex, camLeft, layerOffset);
         }
     }
 
-    private void drawTiled(SpriteBatch batch, Texture tex, float camLeft, float layerX) {
-        // layerX es el desplazamiento horizontal de ESA capa en coordenadas mundo
-        float start = layerX % worldW;
-        if (start > 0) start -= worldW;
+    private void drawTiled(SpriteBatch batch, Texture tex, float camLeft, float layerOffset) {
+        // offset dentro de [0, worldW)
+        float offset = layerOffset % worldW;
+        if (offset < 0) offset += worldW;
 
-        batch.draw(tex, camLeft - start, 0f, worldW, worldH);
-        batch.draw(tex, camLeft - start + worldW, 0f, worldW, worldH);
+        float x0 = camLeft - offset;
+
+        // ✅ 3 tiles para evitar huecos/cortes
+        batch.draw(tex, x0,             0f, worldW, worldH);
+        batch.draw(tex, x0 + worldW,    0f, worldW, worldH);
+        batch.draw(tex, x0 + 2f*worldW, 0f, worldW, worldH);
     }
 }
