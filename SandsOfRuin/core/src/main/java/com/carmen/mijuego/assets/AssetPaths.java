@@ -16,6 +16,9 @@ public final class AssetPaths {
     public static final String AYLA_IDLE = "characters/ayla/ayla_idle.png";
     public static final String AYLA_JUMP = "characters/ayla/ayla_jump.png";
 
+    // ✅ Proyectiles
+    public static final String BULLET = "projectiles/bullet.png";
+
     // Imagenes de los controles
     public static final String UI_LEFT    = "ui/controls/btn_move_left.png";
     public static final String UI_RIGHT   = "ui/controls/btn_move_right.png";
@@ -40,4 +43,11 @@ public final class AssetPaths {
     // Enemies - Cactus
     public static final String CACTUS_PINK   = "enemies/cactus/Pink_Cactus.png";
     public static final String CACTUS_YELLOW = "enemies/cactus/Yellow_Cactus.png";
+
+    // Soldier
+    public static final String SOLDIER_IDLE = "enemies/soldier/soldier_idle.png";
+    public static final String SOLDIER_RUN  = "enemies/soldier/soldier_run.png";   // spritesheet 403x457
+    public static final String SOLDIER_HURT = "enemies/soldier/soldier_hurt.png";  // spritesheet 403x457
+    public static final String SOLDIER_DEAD = "enemies/soldier/soldier_dead.png";
+
 }

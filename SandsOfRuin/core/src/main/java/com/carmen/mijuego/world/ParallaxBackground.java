@@ -9,11 +9,17 @@ public class ParallaxBackground {
 
     private static class Layer {
         final Texture tex;
-        final float factor; // 0..1 (más pequeño = más lejos)
+        final float factor;   // 0..1.. (1 = misma velocidad que el mundo)
+        final float y;
+        final float height;
+        final boolean ignoreSpeedMul; // ✅ para que el suelo no se ralentice
 
-        Layer(Texture tex, float factor) {
+        Layer(Texture tex, float factor, float y, float height, boolean ignoreSpeedMul) {
             this.tex = tex;
             this.factor = factor;
+            this.y = y;
+            this.height = height;
+            this.ignoreSpeedMul = ignoreSpeedMul;
         }
     }
 
@@ -21,29 +27,35 @@ public class ParallaxBackground {
     private final float worldW;
     private final float worldH;
 
-    private final Texture sky;      // fondo fijo
-    private final Layer[] layers;   // capas con parallax
+    private final Texture sky;
+    private final Layer[] layers;
 
-    // ✅ Multiplicador global para hacer el fondo más lento/rápido sin tocar factores
     private float speedMul = 1f;
 
-    public ParallaxBackground(OrthographicCamera camera, Viewport viewport,
+    public ParallaxBackground(OrthographicCamera camera,
+                              Viewport viewport,
                               Texture sky,
-                              Texture[] textures, float[] factors) {
+                              Texture[] textures,
+                              float[] factors,
+                              float[] ys,
+                              float[] heights,
+                              boolean[] ignoreSpeedMul) {
 
-        if (textures.length != factors.length) {
-            throw new IllegalArgumentException("textures y factors deben tener la misma longitud");
+        if (textures.length != factors.length ||
+            textures.length != ys.length ||
+            textures.length != heights.length ||
+            textures.length != ignoreSpeedMul.length) {
+            throw new IllegalArgumentException("arrays con distinta longitud");
         }
 
         this.camera = camera;
         this.worldW = viewport.getWorldWidth();
         this.worldH = viewport.getWorldHeight();
-
         this.sky = sky;
 
         layers = new Layer[textures.length];
         for (int i = 0; i < textures.length; i++) {
-            layers[i] = new Layer(textures[i], factors[i]);
+            layers[i] = new Layer(textures[i], factors[i], ys[i], heights[i], ignoreSpeedMul[i]);
         }
     }
 
@@ -54,26 +66,29 @@ public class ParallaxBackground {
     public void render(SpriteBatch batch, float scrollX) {
         float camLeft = camera.position.x - worldW * 0.5f;
 
-        // Cielo fijo (sigue cámara)
         batch.draw(sky, camLeft, 0f, worldW, worldH);
 
-        // Capas con parallax tileadas
         for (Layer layer : layers) {
-            float layerOffset = scrollX * layer.factor * speedMul;
-            drawTiled(batch, layer.tex, camLeft, layerOffset);
+            float mul = layer.ignoreSpeedMul ? 1f : speedMul;
+            float layerOffset = scrollX * layer.factor * mul;
+            drawTiled(batch, layer.tex, camLeft, layerOffset, layer.y, layer.height);
         }
     }
 
-    private void drawTiled(SpriteBatch batch, Texture tex, float camLeft, float layerOffset) {
-        // offset dentro de [0, worldW)
+    private void drawTiled(SpriteBatch batch,
+                           Texture tex,
+                           float camLeft,
+                           float layerOffset,
+                           float y,
+                           float height) {
+
         float offset = layerOffset % worldW;
         if (offset < 0) offset += worldW;
 
         float x0 = camLeft - offset;
 
-        // ✅ 3 tiles para evitar huecos/cortes
-        batch.draw(tex, x0,             0f, worldW, worldH);
-        batch.draw(tex, x0 + worldW,    0f, worldW, worldH);
-        batch.draw(tex, x0 + 2f*worldW, 0f, worldW, worldH);
+        batch.draw(tex, x0,               y, worldW, height);
+        batch.draw(tex, x0 + worldW,      y, worldW, height);
+        batch.draw(tex, x0 + 2f * worldW, y, worldW, height);
     }
 }

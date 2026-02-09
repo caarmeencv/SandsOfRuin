@@ -28,6 +28,10 @@ public class Assets {
     public static final AssetDescriptor<Texture> AYLA_JUMP =
         new AssetDescriptor<>(AssetPaths.AYLA_JUMP, Texture.class);
 
+    // ✅ ===== PROJECTILES =====
+    public static final AssetDescriptor<Texture> BULLET =
+        new AssetDescriptor<>(AssetPaths.BULLET, Texture.class);
+
     // ===== UI =====
     public static final AssetDescriptor<Texture> UI_LEFT =
         new AssetDescriptor<>(AssetPaths.UI_LEFT, Texture.class);
@@ -66,6 +70,14 @@ public class Assets {
         new AssetDescriptor<>(AssetPaths.CACTUS_PINK, Texture.class);
     public static final AssetDescriptor<Texture> CACTUS_YELLOW =
         new AssetDescriptor<>(AssetPaths.CACTUS_YELLOW, Texture.class);
+    public static final AssetDescriptor<Texture> SOLDIER_IDLE =
+        new AssetDescriptor<>(AssetPaths.SOLDIER_IDLE, Texture.class);
+    public static final AssetDescriptor<Texture> SOLDIER_RUN =
+        new AssetDescriptor<>(AssetPaths.SOLDIER_RUN, Texture.class);
+    public static final AssetDescriptor<Texture> SOLDIER_HURT =
+        new AssetDescriptor<>(AssetPaths.SOLDIER_HURT, Texture.class);
+    public static final AssetDescriptor<Texture> SOLDIER_DEAD =
+        new AssetDescriptor<>(AssetPaths.SOLDIER_DEAD, Texture.class);
 
     public Assets() {
         this.manager = new AssetManager();
@@ -83,6 +95,9 @@ public class Assets {
         manager.load(AYLA_RUN);
         manager.load(AYLA_IDLE);
         manager.load(AYLA_JUMP);
+
+        // ✅ Projectiles
+        manager.load(BULLET);
 
         // UI
         manager.load(UI_LEFT);
@@ -106,6 +121,11 @@ public class Assets {
         // Enemies
         manager.load(CACTUS_PINK);
         manager.load(CACTUS_YELLOW);
+        manager.load(SOLDIER_IDLE);
+        manager.load(SOLDIER_RUN);
+        manager.load(SOLDIER_HURT);
+        manager.load(SOLDIER_DEAD);
+
     }
 
     public void finishLoading() {
@@ -144,6 +164,9 @@ public class Assets {
         setLinear(AYLA_IDLE);
         setLinear(AYLA_JUMP);
 
+        // ✅ Projectiles
+        setLinear(BULLET);
+
         // UI
         setLinear(UI_LEFT);
         setLinear(UI_RIGHT);
@@ -166,6 +189,11 @@ public class Assets {
         // Enemies
         setLinear(CACTUS_PINK);
         setLinear(CACTUS_YELLOW);
+        setLinear(SOLDIER_IDLE);
+        setLinear(SOLDIER_RUN);
+        setLinear(SOLDIER_HURT);
+        setLinear(SOLDIER_DEAD);
+
     }
 
     private void setLinear(AssetDescriptor<Texture> desc) {
