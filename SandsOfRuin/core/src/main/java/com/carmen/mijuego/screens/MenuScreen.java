@@ -10,7 +10,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.viewport.StretchViewport;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.carmen.mijuego.Main;
 
@@ -38,7 +38,6 @@ public class MenuScreen implements Screen {
 
     private static final float HOVER_SCALE = 1.08f;
 
-    // Texto
     private BitmapFont font;
     private GlyphLayout layout;
 
@@ -46,8 +45,13 @@ public class MenuScreen implements Screen {
         this.game = game;
 
         camera = new OrthographicCamera();
-        viewport = new StretchViewport(WORLD_W, WORLD_H, camera);
+        viewport = new FitViewport(WORLD_W, WORLD_H, camera);
+        viewport.apply(true);
 
+        camera.position.set(WORLD_W / 2f, WORLD_H / 2f, 0f);
+        camera.update();
+
+        // Si prefieres AssetManager, cámbialo por game.assets.get(Assets.SCREEN_MENU_BG) etc.
         bg = new Texture("screens/menu/MenuScreen.png");
         btnGame = new Texture("screens/menu/GameButton.png");
         btnOptions = new Texture("screens/menu/OptionsButton.png");
@@ -116,7 +120,6 @@ public class MenuScreen implements Screen {
     }
 
     private void drawButton(Texture tex, Rectangle r, boolean hover, String text) {
-
         float scale = hover ? HOVER_SCALE : 1f;
 
         float w = r.width * scale;
@@ -125,24 +128,19 @@ public class MenuScreen implements Screen {
         float x = r.x + (r.width - w) / 2f;
         float y = r.y + (r.height - h) / 2f;
 
-        // --- DIBUJO BOTÓN ---
         game.batch.draw(tex, x, y, w, h);
 
-        // --- TEXTO ---
         float baseFontScale = 2.0f;
-        font.getData().setScale(baseFontScale * scale); // 👈 el texto escala con el botón
+        font.getData().setScale(baseFontScale * scale);
 
         layout.setText(font, text);
 
-        // Centramos el texto teniendo en cuenta el icono de la izquierda
-        float iconOffset = w * 0.12f; // espacio para el icono (proporcional)
-
+        float iconOffset = w * 0.12f;
         float textX = x + (w - layout.width) / 2f + iconOffset;
         float textY = y + (h + layout.height) / 2f;
 
         font.draw(game.batch, layout, textX, textY);
 
-        // Restaurar escala base (MUY IMPORTANTE)
         font.getData().setScale(baseFontScale);
     }
 
@@ -155,6 +153,7 @@ public class MenuScreen implements Screen {
                 game.setScreen(new DesertScreen(game));
                 return;
             }
+            // aquí luego conectas opciones/créditos/logros
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.isKeyJustPressed(Input.Keys.BACK)) {
@@ -162,6 +161,7 @@ public class MenuScreen implements Screen {
             return;
         }
 
+        // ✅ bandas negras y misma proporción que DesertScreen
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -170,7 +170,8 @@ public class MenuScreen implements Screen {
 
         game.batch.begin();
 
-        game.batch.draw(bg, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
+        // ✅ dibuja en mundo fijo 1280x720 (sin estirar raro)
+        game.batch.draw(bg, 0, 0, WORLD_W, WORLD_H);
 
         drawButton(btnGame, rGame, hoverGame, "JUGAR");
         drawButton(btnOptions, rOptions, hoverOptions, "OPCIONES");

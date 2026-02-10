@@ -28,7 +28,7 @@ public class Assets {
     public static final AssetDescriptor<Texture> AYLA_JUMP =
         new AssetDescriptor<>(AssetPaths.AYLA_JUMP, Texture.class);
 
-    // ✅ ===== PROJECTILES =====
+    // ===== PROJECTILES =====
     public static final AssetDescriptor<Texture> BULLET =
         new AssetDescriptor<>(AssetPaths.BULLET, Texture.class);
 
@@ -70,6 +70,7 @@ public class Assets {
         new AssetDescriptor<>(AssetPaths.CACTUS_PINK, Texture.class);
     public static final AssetDescriptor<Texture> CACTUS_YELLOW =
         new AssetDescriptor<>(AssetPaths.CACTUS_YELLOW, Texture.class);
+
     public static final AssetDescriptor<Texture> SOLDIER_IDLE =
         new AssetDescriptor<>(AssetPaths.SOLDIER_IDLE, Texture.class);
     public static final AssetDescriptor<Texture> SOLDIER_RUN =
@@ -79,10 +80,21 @@ public class Assets {
     public static final AssetDescriptor<Texture> SOLDIER_DEAD =
         new AssetDescriptor<>(AssetPaths.SOLDIER_DEAD, Texture.class);
 
+    // ✅ TANK
+    public static final AssetDescriptor<Texture> TANK_IDLE =
+        new AssetDescriptor<>(AssetPaths.TANK_IDLE, Texture.class);
+    public static final AssetDescriptor<Texture> TANK_MOVE =
+        new AssetDescriptor<>(AssetPaths.TANK_MOVE, Texture.class);
+    public static final AssetDescriptor<Texture> TANK_DESTROY =
+        new AssetDescriptor<>(AssetPaths.TANK_DESTROY, Texture.class);
+    public static final AssetDescriptor<Texture> TANK_DEAD =
+        new AssetDescriptor<>(AssetPaths.TANK_DEAD, Texture.class);
+
     public Assets() {
         this.manager = new AssetManager();
     }
 
+    /** Carga en cola todos los assets usados en el juego. */
     public void queueLoadAll() {
         // Desert
         manager.load(SKY);
@@ -96,7 +108,7 @@ public class Assets {
         manager.load(AYLA_IDLE);
         manager.load(AYLA_JUMP);
 
-        // ✅ Projectiles
+        // Projectiles
         manager.load(BULLET);
 
         // UI
@@ -121,11 +133,17 @@ public class Assets {
         // Enemies
         manager.load(CACTUS_PINK);
         manager.load(CACTUS_YELLOW);
+
         manager.load(SOLDIER_IDLE);
         manager.load(SOLDIER_RUN);
         manager.load(SOLDIER_HURT);
         manager.load(SOLDIER_DEAD);
 
+        // ✅ Tank
+        manager.load(TANK_IDLE);
+        manager.load(TANK_MOVE);
+        manager.load(TANK_DESTROY);
+        manager.load(TANK_DEAD);
     }
 
     public void finishLoading() {
@@ -164,7 +182,7 @@ public class Assets {
         setLinear(AYLA_IDLE);
         setLinear(AYLA_JUMP);
 
-        // ✅ Projectiles
+        // Projectiles
         setLinear(BULLET);
 
         // UI
@@ -189,11 +207,16 @@ public class Assets {
         // Enemies
         setLinear(CACTUS_PINK);
         setLinear(CACTUS_YELLOW);
+
         setLinear(SOLDIER_IDLE);
         setLinear(SOLDIER_RUN);
         setLinear(SOLDIER_HURT);
         setLinear(SOLDIER_DEAD);
 
+        setLinear(TANK_IDLE);
+        setLinear(TANK_MOVE);
+        setLinear(TANK_DESTROY);
+        setLinear(TANK_DEAD);
     }
 
     private void setLinear(AssetDescriptor<Texture> desc) {

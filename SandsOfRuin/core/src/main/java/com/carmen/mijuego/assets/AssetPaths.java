@@ -50,4 +50,9 @@ public final class AssetPaths {
     public static final String SOLDIER_HURT = "enemies/soldier/soldier_hurt.png";  // spritesheet 403x457
     public static final String SOLDIER_DEAD = "enemies/soldier/soldier_dead.png";
 
+    // Tank
+    public static final String TANK_IDLE    = "enemies/tank/tank_idle.png";     // 385x431 (o similar)
+    public static final String TANK_MOVE    = "enemies/tank/tank_move.png";     // spritesheet o frame único
+    public static final String TANK_DESTROY = "enemies/tank/tank_destroy.png";  // 1 vez
+    public static final String TANK_DEAD    = "enemies/tank/tank_dead.png";     // se queda
 }
