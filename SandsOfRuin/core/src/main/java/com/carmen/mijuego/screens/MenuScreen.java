@@ -13,6 +13,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.carmen.mijuego.Main;
+import com.carmen.mijuego.assets.Assets;
 
 public class MenuScreen implements Screen {
 
@@ -51,28 +52,18 @@ public class MenuScreen implements Screen {
         camera.position.set(WORLD_W / 2f, WORLD_H / 2f, 0f);
         camera.update();
 
-        // Si prefieres AssetManager, cámbialo por game.assets.get(Assets.SCREEN_MENU_BG) etc.
-        bg = new Texture("screens/menu/MenuScreen.png");
-        btnGame = new Texture("screens/menu/GameButton.png");
-        btnOptions = new Texture("screens/menu/OptionsButton.png");
-        btnCredits = new Texture("screens/menu/CreditsButton.png");
-        btnAchievements = new Texture("screens/menu/AchievementsButton.png");
-
-        setLinear(bg);
-        setLinear(btnGame);
-        setLinear(btnOptions);
-        setLinear(btnCredits);
-        setLinear(btnAchievements);
+        // ✅ AssetManager
+        bg = game.assets.get(Assets.SCREEN_MENU_BG);
+        btnGame = game.assets.get(Assets.SCREEN_MENU_BTN_GAME);
+        btnOptions = game.assets.get(Assets.SCREEN_MENU_BTN_OPTIONS);
+        btnCredits = game.assets.get(Assets.SCREEN_MENU_BTN_CREDITS);
+        btnAchievements = game.assets.get(Assets.SCREEN_MENU_BTN_ACHIEVEMENTS);
 
         font = new BitmapFont();
         font.getData().setScale(2.0f);
         layout = new GlyphLayout();
 
         updateLayout();
-    }
-
-    private void setLinear(Texture t) {
-        t.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
     }
 
     private void updateLayout() {
@@ -104,7 +95,6 @@ public class MenuScreen implements Screen {
 
         rGame.set(leftX, topY, btnW, btnH);
         rOptions.set(rightX, topY, btnW, btnH);
-
         rCredits.set(leftX, bottomY, btnW, btnH);
         rAchievements.set(rightX, bottomY, btnW, btnH);
     }
@@ -145,6 +135,12 @@ public class MenuScreen implements Screen {
     }
 
     @Override
+    public void show() {
+        // ✅ misma música que intro (no reinicia)
+        game.audio.playMusic(Assets.MUS_INTRO_THEME, true);
+    }
+
+    @Override
     public void render(float delta) {
         updatePointer();
 
@@ -153,7 +149,6 @@ public class MenuScreen implements Screen {
                 game.setScreen(new DesertScreen(game));
                 return;
             }
-            // aquí luego conectas opciones/créditos/logros
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.isKeyJustPressed(Input.Keys.BACK)) {
@@ -161,7 +156,6 @@ public class MenuScreen implements Screen {
             return;
         }
 
-        // ✅ bandas negras y misma proporción que DesertScreen
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -170,7 +164,6 @@ public class MenuScreen implements Screen {
 
         game.batch.begin();
 
-        // ✅ dibuja en mundo fijo 1280x720 (sin estirar raro)
         game.batch.draw(bg, 0, 0, WORLD_W, WORLD_H);
 
         drawButton(btnGame, rGame, hoverGame, "JUGAR");
@@ -187,18 +180,13 @@ public class MenuScreen implements Screen {
         updateLayout();
     }
 
-    @Override public void show() {}
     @Override public void pause() {}
     @Override public void resume() {}
     @Override public void hide() {}
 
     @Override
     public void dispose() {
-        bg.dispose();
-        btnGame.dispose();
-        btnOptions.dispose();
-        btnCredits.dispose();
-        btnAchievements.dispose();
+        // ❌ NO disposes bg/botones (AssetManager)
         font.dispose();
     }
 }

@@ -13,17 +13,17 @@ public class Cactus {
     private final float width;
     private final float height;
 
-    // 🔧 Offset visual (solo dibujo)
+    // Offset visual (solo dibujo)
     private static final float FOOT_OFFSET = 14f;
 
-    // ✅ HITBOX AJUSTADA (MENOS ALTA)
+    // HITBOX AJUSTADA (MENOS ALTA)
     private static final float HIT_PAD_L = 18f;
     private static final float HIT_PAD_R = 18f;
 
     // base menos peligrosa
     private static final float HIT_PAD_BOTTOM = 28f;
 
-    // ⬅️ CLAVE: recortamos la parte superior
+    // CLAVE: recortamos la parte superior
     private static final float HIT_PAD_TOP = 25f;
 
     private final Rectangle bounds = new Rectangle();

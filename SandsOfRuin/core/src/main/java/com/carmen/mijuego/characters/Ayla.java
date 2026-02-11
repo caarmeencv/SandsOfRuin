@@ -17,10 +17,10 @@ public class Ayla {
     private static final float GRAVITY = -1800f;
     private static final float JUMP = 800f;
 
-    // 🔧 Offset visual (solo dibujo)
+    // Offset visual (solo dibujo)
     private static final float FOOT_OFFSET = 14f;
 
-    // ✅ HITBOX AJUSTADA
+    // HITBOX AJUSTADA
     private static final float HIT_PAD_L = 75f;
     private static final float HIT_PAD_R = 75f;
     private static final float HIT_PAD_BOTTOM = 22f;
@@ -40,9 +40,7 @@ public class Ayla {
 
     private final Rectangle bounds = new Rectangle();
 
-    // =========================
-    // ✅ DISPARO
-    // =========================
+    // DISPARO
     private final Texture bulletTex;
     private final Array<Bullet> bullets = new Array<>();
 
@@ -83,10 +81,6 @@ public class Ayla {
         updateBounds();
     }
 
-    /**
-     * Update de Ayla con disparo.
-     * IMPORTANTE: usamos camLeft/camRight para borrar balas en scroll infinito.
-     */
     public void update(float delta,
                        boolean left,
                        boolean right,
@@ -118,11 +112,11 @@ public class Ayla {
         if (moving && onGround) stateTime += delta;
         else stateTime = 0f;
 
-        // ✅ disparo
+        // disparo
         shootTimer -= delta;
         if (shoot) tryShoot();
 
-        // ✅ actualizar balas + borrar si salen de la pantalla REAL (según cámara)
+        // actualizar balas + borrar si salen de la pantalla REAL (según cámara)
         for (int i = bullets.size - 1; i >= 0; i--) {
             Bullet b = bullets.get(i);
             b.update(delta);
@@ -140,7 +134,7 @@ public class Ayla {
         if (shootTimer > 0f) return;
         shootTimer = SHOOT_COOLDOWN;
 
-        // ✅ límite para evitar acumulación infinita
+        // límite para evitar acumulación infinita
         if (bullets.size >= MAX_BULLETS_ON_SCREEN) return;
 
         float dir = facingRight ? 1f : -1f;
@@ -174,7 +168,7 @@ public class Ayla {
             else batch.draw(frame, x + width, drawY, -width, height);
         }
 
-        // ✅ balas por encima del fondo
+        // balas por encima del fondo
         for (Bullet b : bullets) b.draw(batch);
     }
 

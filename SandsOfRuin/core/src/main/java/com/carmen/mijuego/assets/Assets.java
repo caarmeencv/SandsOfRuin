@@ -2,11 +2,15 @@ package com.carmen.mijuego.assets;
 
 import com.badlogic.gdx.assets.AssetDescriptor;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 
 public class Assets {
 
     private final AssetManager manager;
+
+    // ===================== TEXTURES =====================
 
     // ===== DESERT =====
     public static final AssetDescriptor<Texture> SKY =
@@ -80,7 +84,7 @@ public class Assets {
     public static final AssetDescriptor<Texture> SOLDIER_DEAD =
         new AssetDescriptor<>(AssetPaths.SOLDIER_DEAD, Texture.class);
 
-    // ✅ TANK
+    // ===== TANK =====
     public static final AssetDescriptor<Texture> TANK_IDLE =
         new AssetDescriptor<>(AssetPaths.TANK_IDLE, Texture.class);
     public static final AssetDescriptor<Texture> TANK_MOVE =
@@ -89,6 +93,66 @@ public class Assets {
         new AssetDescriptor<>(AssetPaths.TANK_DESTROY, Texture.class);
     public static final AssetDescriptor<Texture> TANK_DEAD =
         new AssetDescriptor<>(AssetPaths.TANK_DEAD, Texture.class);
+
+    // ===================== AUDIO =====================
+
+    // ===== SFX (Sound) =====
+    public static final AssetDescriptor<Sound> SFX_AYLA_DAMAGE =
+        new AssetDescriptor<>(AssetPaths.SFX_AYLA_DAMAGE, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_EXPLOSION_GRENADE =
+        new AssetDescriptor<>(AssetPaths.SFX_EXPLOSION_GRENADE, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_EXPLOSION_TANK =
+        new AssetDescriptor<>(AssetPaths.SFX_EXPLOSION_TANK, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_GAME_OVER =
+        new AssetDescriptor<>(AssetPaths.SFX_GAME_OVER, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_GRENADE_TAPE =
+        new AssetDescriptor<>(AssetPaths.SFX_GRENADE_TAPE, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_MUMMY_DEAD =
+        new AssetDescriptor<>(AssetPaths.SFX_MUMMY_DEAD, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_MUMMY_GRUNTS =
+        new AssetDescriptor<>(AssetPaths.SFX_MUMMY_GRUNTS, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_MUMMY_SHOTS =
+        new AssetDescriptor<>(AssetPaths.SFX_MUMMY_SHOTS, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_PYRAMID_STEPS =
+        new AssetDescriptor<>(AssetPaths.SFX_PYRAMID_STEPS, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_SAND_WALK =
+        new AssetDescriptor<>(AssetPaths.SFX_SAND_WALK, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_SHOT_GUN_1 =
+        new AssetDescriptor<>(AssetPaths.SFX_SHOT_GUN_1, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_SHOT_GUN_2 =
+        new AssetDescriptor<>(AssetPaths.SFX_SHOT_GUN_2, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_SHOT_TANK =
+        new AssetDescriptor<>(AssetPaths.SFX_SHOT_TANK, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_SOLDIER_DAMAGE =
+        new AssetDescriptor<>(AssetPaths.SFX_SOLDIER_DAMAGE, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_TANK_MOVE =
+        new AssetDescriptor<>(AssetPaths.SFX_TANK_MOVE, Sound.class);
+    public static final AssetDescriptor<Sound> SFX_VICTORY =
+        new AssetDescriptor<>(AssetPaths.SFX_VICTORY, Sound.class);
+
+    // ===== MUSIC (Music) =====
+    public static final AssetDescriptor<Music> MUS_ACHIEVEMENTS_THEME =
+        new AssetDescriptor<>(AssetPaths.MUS_ACHIEVEMENTS_THEME, Music.class);
+    public static final AssetDescriptor<Music> MUS_ACHIEVEMENTS_THEME2 =
+        new AssetDescriptor<>(AssetPaths.MUS_ACHIEVEMENTS_THEME2, Music.class);
+    public static final AssetDescriptor<Music> MUS_CONFIG_THEME =
+        new AssetDescriptor<>(AssetPaths.MUS_CONFIG_THEME, Music.class);
+    public static final AssetDescriptor<Music> MUS_CREDITS_THEME =
+        new AssetDescriptor<>(AssetPaths.MUS_CREDITS_THEME, Music.class);
+    public static final AssetDescriptor<Music> MUS_DESERT_THEME =
+        new AssetDescriptor<>(AssetPaths.MUS_DESERT_THEME, Music.class);
+    public static final AssetDescriptor<Music> MUS_GAME_OVER_THEME =
+        new AssetDescriptor<>(AssetPaths.MUS_GAME_OVER_THEME, Music.class);
+    public static final AssetDescriptor<Music> MUS_INTRO_THEME =
+        new AssetDescriptor<>(AssetPaths.MUS_INTRO_THEME, Music.class);
+    public static final AssetDescriptor<Music> MUS_PAUSE_THEME =
+        new AssetDescriptor<>(AssetPaths.MUS_PAUSE_THEME, Music.class);
+    public static final AssetDescriptor<Music> MUS_PYRAMID_THEME =
+        new AssetDescriptor<>(AssetPaths.MUS_PYRAMID_THEME, Music.class);
+    public static final AssetDescriptor<Music> MUS_VICTORY_THEME =
+        new AssetDescriptor<>(AssetPaths.MUS_VICTORY_THEME, Music.class);
+
+    // ===================== LIFECYCLE =====================
 
     public Assets() {
         this.manager = new AssetManager();
@@ -139,11 +203,41 @@ public class Assets {
         manager.load(SOLDIER_HURT);
         manager.load(SOLDIER_DEAD);
 
-        // ✅ Tank
+        // Tank
         manager.load(TANK_IDLE);
         manager.load(TANK_MOVE);
         manager.load(TANK_DESTROY);
         manager.load(TANK_DEAD);
+
+        // SFX
+        manager.load(SFX_AYLA_DAMAGE);
+        manager.load(SFX_EXPLOSION_GRENADE);
+        manager.load(SFX_EXPLOSION_TANK);
+        manager.load(SFX_GAME_OVER);
+        manager.load(SFX_GRENADE_TAPE);
+        manager.load(SFX_MUMMY_DEAD);
+        manager.load(SFX_MUMMY_GRUNTS);
+        manager.load(SFX_MUMMY_SHOTS);
+        manager.load(SFX_PYRAMID_STEPS);
+        manager.load(SFX_SAND_WALK);
+        manager.load(SFX_SHOT_GUN_1);
+        manager.load(SFX_SHOT_GUN_2);
+        manager.load(SFX_SHOT_TANK);
+        manager.load(SFX_SOLDIER_DAMAGE);
+        manager.load(SFX_TANK_MOVE);
+        manager.load(SFX_VICTORY);
+
+        // Music
+        manager.load(MUS_ACHIEVEMENTS_THEME);
+        manager.load(MUS_ACHIEVEMENTS_THEME2);
+        manager.load(MUS_CONFIG_THEME);
+        manager.load(MUS_CREDITS_THEME);
+        manager.load(MUS_DESERT_THEME);
+        manager.load(MUS_GAME_OVER_THEME);
+        manager.load(MUS_INTRO_THEME);
+        manager.load(MUS_PAUSE_THEME);
+        manager.load(MUS_PYRAMID_THEME);
+        manager.load(MUS_VICTORY_THEME);
     }
 
     public void finishLoading() {
@@ -161,7 +255,7 @@ public class Assets {
         return manager.getProgress();
     }
 
-    public Texture get(AssetDescriptor<Texture> desc) {
+    public <T> T get(AssetDescriptor<T> desc) {
         return manager.get(desc);
     }
 
@@ -170,22 +264,19 @@ public class Assets {
     }
 
     private void applyDefaultFilters() {
-        // Desert
+        // Textures con filtro linear
         setLinear(SKY);
         setLinear(CLOUDS);
         setLinear(RUINS);
         setLinear(MID);
         setLinear(NEAR);
 
-        // Ayla
         setLinear(AYLA_RUN);
         setLinear(AYLA_IDLE);
         setLinear(AYLA_JUMP);
 
-        // Projectiles
         setLinear(BULLET);
 
-        // UI
         setLinear(UI_LEFT);
         setLinear(UI_RIGHT);
         setLinear(UI_JUMP);
@@ -193,10 +284,8 @@ public class Assets {
         setLinear(UI_GRENADE);
         setLinear(UI_PAUSE);
 
-        // HUD
         setLinear(HUD_HEART_FULL);
 
-        // Screens
         setLinear(SCREEN_INTRO);
         setLinear(SCREEN_MENU_BG);
         setLinear(SCREEN_MENU_BTN_GAME);
@@ -204,7 +293,6 @@ public class Assets {
         setLinear(SCREEN_MENU_BTN_CREDITS);
         setLinear(SCREEN_MENU_BTN_ACHIEVEMENTS);
 
-        // Enemies
         setLinear(CACTUS_PINK);
         setLinear(CACTUS_YELLOW);
 

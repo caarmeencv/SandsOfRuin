@@ -12,7 +12,7 @@ public class ParallaxBackground {
         final float factor;   // 0..1.. (1 = misma velocidad que el mundo)
         final float y;
         final float height;
-        final boolean ignoreSpeedMul; // ✅ para que el suelo no se ralentice
+        final boolean ignoreSpeedMul; // para que el suelo no se ralentice
 
         Layer(Texture tex, float factor, float y, float height, boolean ignoreSpeedMul) {
             this.tex = tex;

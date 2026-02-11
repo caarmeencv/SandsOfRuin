@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.carmen.mijuego.Main;
+import com.carmen.mijuego.assets.Assets;
 
 public class IntroScreen implements Screen {
 
@@ -39,14 +40,18 @@ public class IntroScreen implements Screen {
         camera.position.set(WORLD_W / 2f, WORLD_H / 2f, 0f);
         camera.update();
 
-        // Si prefieres usar AssetManager, cámbialo por game.assets.get(Assets.SCREEN_INTRO)
-        introImage = new Texture("screens/intro/IntroScreen.png");
-        introImage.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        // ✅ AssetManager
+        introImage = game.assets.get(Assets.SCREEN_INTRO);
 
         font = new BitmapFont();
         font.getData().setScale(1.5f);
-
         layout = new GlyphLayout();
+    }
+
+    @Override
+    public void show() {
+        // ✅ Empieza aquí y seguirá en el menú sin reiniciar
+        game.audio.playMusic(Assets.MUS_INTRO_THEME, true);
     }
 
     @Override
@@ -60,7 +65,6 @@ public class IntroScreen implements Screen {
             return;
         }
 
-        // ✅ bandas negras iguales que DesertScreen (FitViewport)
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -68,8 +72,6 @@ public class IntroScreen implements Screen {
         game.batch.setProjectionMatrix(camera.combined);
 
         game.batch.begin();
-
-        // ✅ dibuja en coordenadas de mundo (1280x720)
         game.batch.draw(introImage, 0, 0, WORLD_W, WORLD_H);
 
         boolean visible = (blinkTime % 1f) < 0.5f;
@@ -91,14 +93,13 @@ public class IntroScreen implements Screen {
         viewport.update(width, height, true);
     }
 
-    @Override public void show() {}
     @Override public void pause() {}
     @Override public void resume() {}
     @Override public void hide() {}
 
     @Override
     public void dispose() {
-        introImage.dispose();
+        // ❌ NO disposes introImage (es del AssetManager)
         font.dispose();
     }
 }

@@ -44,24 +44,23 @@ public class DesertScreen implements Screen {
     private static final float CACTUS_SPAWN_MARGIN = 250f;
     private static final float CACTUS_HEIGHT = 90f;
 
-    // ✅ golpe / cooldown
+    // golpe / cooldown
     private static final float HIT_DELAY = 0.55f;
 
-    // ✅ knockback (retrocede el mundo)
+    // knockback (retrocede el mundo)
     private static final float KNOCKBACK_DISTANCE = 140f;
     private static final float KNOCKBACK_SPEED = 900f;
 
-    // ✅ SOLDIERS spawn
+    // SOLDIERS spawn
     private static final float SOLDIER_MIN_DIST = 1800f;
     private static final float SOLDIER_MAX_DIST = 3200f;
     private static final float SOLDIER_SPAWN_MARGIN = 600f;
 
-    // ✅ altura del soldier = misma que cactus
+    // altura del soldier = misma que cactus
     private static final float SOLDIER_HEIGHT = CACTUS_HEIGHT;
 
-    /// =========================
-// ✅ TANK spawn (MÁS frecuente)
-// =========================
+    // TANK spawn (MÁS frecuente)
+
     private static final float TANK_MIN_DIST = 2400f;
     private static final float TANK_MAX_DIST = 4500f;
     private static final float TANK_SPAWN_MARGIN = 650f;
@@ -81,7 +80,7 @@ public class DesertScreen implements Screen {
     private final Array<Cactus> cactuses = new Array<>();
     private final Array<Soldier> soldiers = new Array<>();
 
-    // ✅ TANKS
+    // TANKS
     private final Array<Tank> tanks = new Array<>();
     private float nextTankSpawnX = 0f;
 
@@ -96,7 +95,7 @@ public class DesertScreen implements Screen {
     private float hitCooldown = 0f;
     private float knockRemaining = 0f;
 
-    // ✅ debug hitboxes
+    // debug hitboxes
     private ShapeRenderer shapeRenderer;
     private boolean debugHitboxes = true;
 
@@ -166,7 +165,7 @@ public class DesertScreen implements Screen {
         // primer soldado
         nextSoldierSpawnX = camRight + 1200f;
 
-        // ✅ primer tank (más temprano)
+        // primer tank (más temprano)
         nextTankSpawnX = camRight + 1600f;
 
 
@@ -193,7 +192,7 @@ public class DesertScreen implements Screen {
 
         boolean moving = (left ^ right);
 
-        // ✅ knockback (retroceso del mundo)
+        // knockback (retroceso del mundo)
         if (knockRemaining > 0f) {
             float step = KNOCKBACK_SPEED * delta;
             if (step > knockRemaining) step = knockRemaining;
@@ -234,7 +233,7 @@ public class DesertScreen implements Screen {
             nextSpawnX = camRight + MathUtils.random(CACTUS_MIN_DIST, CACTUS_MAX_DIST);
         }
 
-        // ✅ SOLDIER spawn aleatorio
+        // SOLDIER spawn aleatorio
         if (camRight >= nextSoldierSpawnX) {
             float sx = camRight + SOLDIER_SPAWN_MARGIN;
 
@@ -251,9 +250,7 @@ public class DesertScreen implements Screen {
             nextSoldierSpawnX = camRight + MathUtils.random(SOLDIER_MIN_DIST, SOLDIER_MAX_DIST);
         }
 
-        // =========================
-        // ✅ TANK spawn (menos probable)
-        // =========================
+        // TANK spawn (menos probable)
         if (camRight >= nextTankSpawnX) {
             // reprogramamos siempre la siguiente distancia, salga o no salga ahora
             nextTankSpawnX = camRight + MathUtils.random(TANK_MIN_DIST, TANK_MAX_DIST);
@@ -287,14 +284,14 @@ public class DesertScreen implements Screen {
             }
         }
 
-        // ✅ quitar tanks fuera de pantalla
+        // quitar tanks fuera de pantalla
         for (int i = tanks.size - 1; i >= 0; i--) {
             if (tanks.get(i).isOffScreenLeft(camLeft)) {
                 tanks.removeIndex(i);
             }
         }
 
-        // ✅ colisión Ayla - cactus (con cooldown)
+        // colisión Ayla - cactus (con cooldown)
         if (hitCooldown <= 0f) {
             for (int i = 0; i < cactuses.size; i++) {
                 Cactus c = cactuses.get(i);
@@ -307,7 +304,7 @@ public class DesertScreen implements Screen {
             }
         }
 
-        // ✅ colisión Ayla - tank (con cooldown) (por si lo tocas al saltar)
+        // colisión Ayla - tank (con cooldown) (por si lo tocas al saltar)
         if (hitCooldown <= 0f) {
             for (int i = 0; i < tanks.size; i++) {
                 Tank t = tanks.get(i);
@@ -320,7 +317,7 @@ public class DesertScreen implements Screen {
             }
         }
 
-        // ✅ actualizar soldados + colisiones
+        // actualizar soldados + colisiones
         Array<Bullet> aylaBullets = ayla.getBullets();
 
         for (int i = 0; i < soldiers.size; i++) {
@@ -354,9 +351,6 @@ public class DesertScreen implements Screen {
             }
         }
 
-        // =========================
-        // ✅ actualizar tanks + colisiones con balas de Ayla
-        // =========================
         for (int i = 0; i < tanks.size; i++) {
             Tank t = tanks.get(i);
             t.update(delta, ayla.getX());
@@ -387,7 +381,7 @@ public class DesertScreen implements Screen {
 
         for (Cactus c : cactuses) c.draw(game.batch);
         for (Soldier s : soldiers) s.draw(game.batch);
-        for (Tank t : tanks) t.draw(game.batch); // ✅ dibujar tank
+        for (Tank t : tanks) t.draw(game.batch);
 
         ayla.draw(game.batch, moving);
 
@@ -396,7 +390,6 @@ public class DesertScreen implements Screen {
 
         game.batch.end();
 
-        // ✅ DEBUG HITBOXES
         if (debugHitboxes) {
             shapeRenderer.setProjectionMatrix(camera.combined);
             shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
@@ -446,7 +439,7 @@ public class DesertScreen implements Screen {
                 }
             }
 
-            // ✅ Tank (magenta)
+            // Tank (magenta)
             shapeRenderer.setColor(Color.MAGENTA);
             for (int i = 0; i < tanks.size; i++) {
                 Tank t = tanks.get(i);
@@ -468,7 +461,14 @@ public class DesertScreen implements Screen {
         controls.updateLayout(camera, viewport);
     }
 
-    @Override public void show() {}
+    @Override
+    public void show() {
+        game.audio.playMusic(
+            com.carmen.mijuego.assets.Assets.MUS_DESERT_THEME,
+            true
+        );
+    }
+
     @Override public void pause() {}
     @Override public void resume() {}
     @Override public void hide() {}

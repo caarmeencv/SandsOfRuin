@@ -30,9 +30,6 @@ public class LivesHUD {
         this.offsetY = offsetY;
     }
 
-    /**
-     * Dibuja 5 corazones pegados a la pantalla, usando la cámara actual.
-     */
     public void draw(SpriteBatch batch, float camLeft, float camTop) {
         float y = camTop - offsetY - heartSize;
 
