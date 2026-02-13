@@ -18,7 +18,7 @@ import com.carmen.mijuego.assets.Assets;
 import com.carmen.mijuego.characters.Ayla;
 import com.carmen.mijuego.enemies.Cactus;
 import com.carmen.mijuego.enemies.Soldier;
-import com.carmen.mijuego.enemies.Tank; // ✅ NUEVO
+import com.carmen.mijuego.enemies.Tank;
 import com.carmen.mijuego.input.Controls;
 import com.carmen.mijuego.projectiles.Bullet;
 import com.carmen.mijuego.ui.LivesHUD;
@@ -55,16 +55,19 @@ public class DesertScreen implements Screen {
     private static final float SOLDIER_MIN_DIST = 1800f;
     private static final float SOLDIER_MAX_DIST = 3200f;
     private static final float SOLDIER_SPAWN_MARGIN = 600f;
-
-    // altura del soldier = misma que cactus
     private static final float SOLDIER_HEIGHT = CACTUS_HEIGHT;
 
-    // TANK spawn (MÁS frecuente)
-
+    // TANK spawn
     private static final float TANK_MIN_DIST = 2400f;
     private static final float TANK_MAX_DIST = 4500f;
     private static final float TANK_SPAWN_MARGIN = 650f;
-    private static final float TANK_SPAWN_CHANCE = 0.78f; // antes 0.45
+    private static final float TANK_SPAWN_CHANCE = 0.78f;
+
+    // --- BALAS TANK (grandes) ---
+    private static final float TANK_BULLET_W = 90f;
+    private static final float TANK_BULLET_H = 45f;
+    private static final float TANK_BULLET_SPEED = 700f; // el signo lo ponemos según facing
+    private static final float TANK_MUZZLE_Y = 40f;
 
     private final Main game;
     private OrthographicCamera camera;
@@ -79,15 +82,14 @@ public class DesertScreen implements Screen {
 
     private final Array<Cactus> cactuses = new Array<>();
     private final Array<Soldier> soldiers = new Array<>();
-
-    // TANKS
     private final Array<Tank> tanks = new Array<>();
-    private float nextTankSpawnX = 0f;
 
+    // ✅ balas de tanque
+    private final Array<Bullet> tankBullets = new Array<>();
+
+    private float nextTankSpawnX = 0f;
     private float scrollX = 0f;
     private float nextSpawnX = 0f;
-
-    // Soldados
     private float nextSoldierSpawnX = 0f;
 
     private LivesHUD livesHUD;
@@ -161,13 +163,8 @@ public class DesertScreen implements Screen {
 
         float camRight = camera.position.x + viewport.getWorldWidth() / 2f;
         nextSpawnX = camRight + 600f;
-
-        // primer soldado
         nextSoldierSpawnX = camRight + 1200f;
-
-        // primer tank (más temprano)
         nextTankSpawnX = camRight + 1600f;
-
 
         shapeRenderer = new ShapeRenderer();
     }
@@ -233,7 +230,7 @@ public class DesertScreen implements Screen {
             nextSpawnX = camRight + MathUtils.random(CACTUS_MIN_DIST, CACTUS_MAX_DIST);
         }
 
-        // SOLDIER spawn aleatorio
+        // SOLDIER spawn
         if (camRight >= nextSoldierSpawnX) {
             float sx = camRight + SOLDIER_SPAWN_MARGIN;
 
@@ -250,12 +247,10 @@ public class DesertScreen implements Screen {
             nextSoldierSpawnX = camRight + MathUtils.random(SOLDIER_MIN_DIST, SOLDIER_MAX_DIST);
         }
 
-        // TANK spawn (menos probable)
+        // TANK spawn
         if (camRight >= nextTankSpawnX) {
-            // reprogramamos siempre la siguiente distancia, salga o no salga ahora
             nextTankSpawnX = camRight + MathUtils.random(TANK_MIN_DIST, TANK_MAX_DIST);
 
-            // probabilidad
             if (MathUtils.random() < TANK_SPAWN_CHANCE) {
                 float tx = camRight + TANK_SPAWN_MARGIN;
 
@@ -270,28 +265,22 @@ public class DesertScreen implements Screen {
             }
         }
 
-        // quitar cactus fuera de pantalla
+        // quitar cactus fuera
         for (int i = cactuses.size - 1; i >= 0; i--) {
-            if (cactuses.get(i).isOffScreenLeft(camLeft)) {
-                cactuses.removeIndex(i);
-            }
+            if (cactuses.get(i).isOffScreenLeft(camLeft)) cactuses.removeIndex(i);
         }
 
-        // quitar soldados fuera de pantalla
+        // quitar soldados fuera
         for (int i = soldiers.size - 1; i >= 0; i--) {
-            if (soldiers.get(i).isOffScreenLeft(camLeft)) {
-                soldiers.removeIndex(i);
-            }
+            if (soldiers.get(i).isOffScreenLeft(camLeft)) soldiers.removeIndex(i);
         }
 
-        // quitar tanks fuera de pantalla
+        // quitar tanks fuera
         for (int i = tanks.size - 1; i >= 0; i--) {
-            if (tanks.get(i).isOffScreenLeft(camLeft)) {
-                tanks.removeIndex(i);
-            }
+            if (tanks.get(i).isOffScreenLeft(camLeft)) tanks.removeIndex(i);
         }
 
-        // colisión Ayla - cactus (con cooldown)
+        // colisión Ayla - cactus
         if (hitCooldown <= 0f) {
             for (int i = 0; i < cactuses.size; i++) {
                 Cactus c = cactuses.get(i);
@@ -304,7 +293,7 @@ public class DesertScreen implements Screen {
             }
         }
 
-        // colisión Ayla - tank (con cooldown) (por si lo tocas al saltar)
+        // colisión Ayla - tank (cuerpo)
         if (hitCooldown <= 0f) {
             for (int i = 0; i < tanks.size; i++) {
                 Tank t = tanks.get(i);
@@ -326,7 +315,7 @@ public class DesertScreen implements Screen {
             s.update(delta, ayla.getX(), camLeft, camRight);
             s.setAylaX(ayla.getX());
 
-            // 1) balas de Ayla -> soldado
+            // balas de Ayla -> soldado
             for (int b = aylaBullets.size - 1; b >= 0; b--) {
                 Bullet ab = aylaBullets.get(b);
                 if (ab.getBounds().overlaps(s.getBounds()) && !s.isDead()) {
@@ -335,7 +324,7 @@ public class DesertScreen implements Screen {
                 }
             }
 
-            // 2) balas del soldado -> Ayla
+            // balas del soldado -> Ayla
             if (hitCooldown <= 0f) {
                 Array<Bullet> sb = s.getBullets();
                 for (int b = sb.size - 1; b >= 0; b--) {
@@ -351,24 +340,71 @@ public class DesertScreen implements Screen {
             }
         }
 
+        // --- TANKS: update + recibir daño + DISPARAR ---
         for (int i = 0; i < tanks.size; i++) {
             Tank t = tanks.get(i);
+
             t.update(delta, ayla.getX());
 
-            // balas Ayla -> tank (3 disparos -> destroy -> dead)
+            // balas Ayla -> tank (3 hits)
             for (int b = aylaBullets.size - 1; b >= 0; b--) {
                 Bullet ab = aylaBullets.get(b);
 
-                // si ya fue eliminada por otro impacto, saltar
                 if (!ab.isAlive()) continue;
-
-                // no golpear si ya está en destroy/dead
                 if (t.isDead() || t.isDestroying()) continue;
 
                 if (ab.getBounds().overlaps(t.getBounds())) {
                     ab.kill();
                     t.hitByAylaBullet();
                 }
+            }
+
+            // ✅ DISPARO DEL TANK (balas grandes)
+            if (t.canShoot(delta)) {
+
+                float muzzleX = t.isFacingRight()
+                    ? (t.getX() + t.getWidth())
+                    : t.getX();
+
+                float muzzleY = t.getY() + TANK_MUZZLE_Y;
+
+                float velX = t.isFacingRight()
+                    ? TANK_BULLET_SPEED
+                    : -TANK_BULLET_SPEED;
+
+                // ✅ usa la misma textura que el resto, pero más grande
+                // Si tienes otra textura para el tanque, cambia Assets.BULLET por tu Assets.TANK_BULLET
+                Bullet tb = new Bullet(
+                    game.assets.get(Assets.BULLET),
+                    muzzleX,
+                    muzzleY,
+                    velX,
+                    TANK_BULLET_W,
+                    TANK_BULLET_H
+                );
+
+                tankBullets.add(tb);
+
+                // Debug útil: si no sale esto, no está disparando
+                // Gdx.app.log("TANK", "DISPARA: x=" + muzzleX + " y=" + muzzleY + " velX=" + velX);
+            }
+        }
+
+        // ✅ actualizar balas del tank + colisión con Ayla + borrar fuera
+        for (int i = tankBullets.size - 1; i >= 0; i--) {
+            Bullet b = tankBullets.get(i);
+            b.update(delta);
+
+            if (hitCooldown <= 0f && b.isAlive() && b.getBounds().overlaps(ayla.getBounds())) {
+                b.kill();
+                knockRemaining = KNOCKBACK_DISTANCE;
+                hitCooldown = HIT_DELAY;
+                // livesHUD.loseLife();
+            }
+
+            // fuera de pantalla respecto a cámara
+            if (!b.isAlive() || b.getX() < camLeft - 400f || b.getX() > camRight + 400f) {
+                tankBullets.removeIndex(i);
             }
         }
 
@@ -382,6 +418,9 @@ public class DesertScreen implements Screen {
         for (Cactus c : cactuses) c.draw(game.batch);
         for (Soldier s : soldiers) s.draw(game.batch);
         for (Tank t : tanks) t.draw(game.batch);
+
+        // ✅ dibujar balas del tanque (para que SE VEAN)
+        for (Bullet b : tankBullets) b.draw(game.batch);
 
         ayla.draw(game.batch, moving);
 
@@ -448,6 +487,18 @@ public class DesertScreen implements Screen {
                     t.getBounds().y,
                     t.getBounds().width,
                     t.getBounds().height
+                );
+            }
+
+            // ✅ balas del tank (naranja)
+            shapeRenderer.setColor(Color.ORANGE);
+            for (int i = 0; i < tankBullets.size; i++) {
+                Bullet bb = tankBullets.get(i);
+                shapeRenderer.rect(
+                    bb.getBounds().x,
+                    bb.getBounds().y,
+                    bb.getBounds().width,
+                    bb.getBounds().height
                 );
             }
 

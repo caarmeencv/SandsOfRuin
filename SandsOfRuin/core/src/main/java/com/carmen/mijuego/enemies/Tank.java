@@ -12,13 +12,12 @@ import com.badlogic.gdx.utils.Array;
  * - tank_move: spritesheet horizontal 4 frames (loop)
  * - tank_idle: sprite único
  * - 3 disparos -> tank_destroy: spritesheet 15 frames (play once) -> tank_dead (sprite único)
- * - Hitbox: 3/4 ancho y 1/2 alto
+ * - Hitbox: 3/4 ancho y ~40% alto
  */
 public class Tank {
 
     private enum State { MOVE, IDLE, DESTROY, DEAD }
 
-    // ✅ frames reales
     private static final int MOVE_FRAMES = 4;
     private static final int DESTROY_FRAMES = 15;
 
@@ -39,6 +38,10 @@ public class Tank {
     // Animación
     private static final float MOVE_FRAME_TIME = 0.10f;
     private static final float DESTROY_FRAME_TIME = 0.06f; // 15 frames -> ~0.9s
+
+    // --- DISPARO ---
+    private static final float SHOOT_COOLDOWN = 2.2f; // cada 2.2s
+    private float shootTimer = 0f;
 
     private float x, y;
     private boolean facingRight = false;
@@ -74,7 +77,7 @@ public class Tank {
         this.x = startX;
         this.y = startY;
 
-        // ✅ frame size CALCULADO (evita dibujar el sheet entero)
+        // ✅ frame size calculado
         int moveFrameW = tankMoveSheet.getWidth() / MOVE_FRAMES;
         int moveFrameH = tankMoveSheet.getHeight();
 
@@ -87,13 +90,7 @@ public class Tank {
         updateBounds();
     }
 
-    /**
-     * Construye animación desde spritesheet horizontal (1 fila).
-     * @param sheet textura
-     * @param frames número de frames en la fila
-     * @param frameTime duración por frame
-     * @param loop si hace loop
-     */
+    /** Construye animación desde spritesheet horizontal (1 fila). */
     private Animation<TextureRegion> buildAnimHorizontal(Texture sheet, int frames, float frameTime, boolean loop) {
         int frameW = sheet.getWidth() / frames;
         int frameH = sheet.getHeight();
@@ -146,6 +143,18 @@ public class Tank {
         updateBounds();
     }
 
+    /** Cooldown de disparo. Llama a esto UNA vez por frame. */
+    public boolean canShoot(float delta) {
+        if (state == State.DEAD || state == State.DESTROY) return false;
+
+        shootTimer += delta;
+        if (shootTimer >= SHOOT_COOLDOWN) {
+            shootTimer = 0f;
+            return true;
+        }
+        return false;
+    }
+
     /** Llamar cuando una bala de Ayla golpea al tanque. */
     public void hitByAylaBullet() {
         if (state == State.DEAD || state == State.DESTROY) return;
@@ -153,7 +162,7 @@ public class Tank {
         hitsTaken++;
         if (hitsTaken >= HP) {
             state = State.DESTROY;
-            stateTime = 0f; // ✅ muy importante: reiniciar para reproducir destroy desde el frame 0
+            stateTime = 0f; // reiniciar para reproducir destroy desde frame 0
         }
     }
 
@@ -192,7 +201,7 @@ public class Tank {
     }
 
     private void updateBounds() {
-        // Hitbox: 3/4 ancho y 1/2 alto
+        // Hitbox: 3/4 ancho y ~40% alto
         float hitW = width * 0.75f;
         float hitH = height * 0.40f;
 
@@ -213,4 +222,10 @@ public class Tank {
     public boolean isOffScreenLeft(float camLeft) {
         return x + width < camLeft - 700f;
     }
+
+    // --- GETTERS necesarios para disparar desde DesertScreen ---
+    public float getX() { return x; }
+    public float getY() { return y; }
+    public float getWidth() { return width; }
+    public boolean isFacingRight() { return facingRight; }
 }

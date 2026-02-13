@@ -26,6 +26,7 @@ public class Bullet {
         this.width = width;
         this.height = height;
         updateBounds();
+
     }
 
     public void update(float delta) {
