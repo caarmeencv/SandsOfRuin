@@ -17,6 +17,18 @@ public class Ayla {
     private static final float GRAVITY = -1800f;
     private static final float JUMP = 800f;
 
+    // -----------------------
+    // DOBLE SALTO (robusto)
+    // -----------------------
+    private static final int MAX_JUMPS = 2;
+    private int jumpsLeft = MAX_JUMPS;
+
+    // Segundo salto un pelín más suave (opcional)
+    private static final float DOUBLE_JUMP_MUL = 0.90f;
+
+    // Para detectar "just pressed" aunque jump llegue como estado (mantener pulsado)
+    private boolean jumpWasDown = false;
+
     // Offset visual (solo dibujo)
     private static final float FOOT_OFFSET = 14f;
 
@@ -24,7 +36,7 @@ public class Ayla {
     private static final float HIT_PAD_L = 75f;
     private static final float HIT_PAD_R = 75f;
     private static final float HIT_PAD_BOTTOM = 22f;
-    private static final float HIT_PAD_TOP = 55f;
+    private static final float HIT_PAD_TOP = 20f;
 
     private final Texture idleTex;
     private final Texture jumpTex;
@@ -54,9 +66,8 @@ public class Ayla {
     private static final float BULLET_W = 36f;
     private static final float BULLET_H = 18f;
 
-    private static final float BULLET_OFFSET_X = 190f; // más cerca -> baja más (ej: 175f)
-    private static final float BULLET_OFFSET_Y = 190f; // más arriba -> sube más (ej: 220f)
-
+    private static final float BULLET_OFFSET_X = 190f;
+    private static final float BULLET_OFFSET_Y = 190f;
 
     public Ayla(Texture runSheet, Texture idle, Texture jump, Texture bulletTex, float startX, float startY) {
         this.idleTex = idle;
@@ -95,18 +106,31 @@ public class Ayla {
         if (right) facingRight = true;
         if (left)  facingRight = false;
 
-        if (jump && onGround) {
-            velY = JUMP;
+        // -----------------------
+        // DOBLE SALTO con "just pressed" interno
+        // -----------------------
+        boolean jumpJustPressed = jump && !jumpWasDown;
+        jumpWasDown = jump;
+
+        if (jumpJustPressed && jumpsLeft > 0) {
+            boolean isDoubleJump = !onGround;
+
+            velY = JUMP * (isDoubleJump ? DOUBLE_JUMP_MUL : 1f);
+
             onGround = false;
+            jumpsLeft--;
         }
 
+        // física
         velY += GRAVITY * delta;
         y += velY * delta;
 
+        // suelo
         if (y <= groundY) {
             y = groundY;
             velY = 0;
             onGround = true;
+            jumpsLeft = MAX_JUMPS; // recarga
         }
 
         if (moving && onGround) stateTime += delta;
@@ -116,7 +140,7 @@ public class Ayla {
         shootTimer -= delta;
         if (shoot) tryShoot();
 
-        // actualizar balas + borrar si salen de la pantalla REAL (según cámara)
+        // actualizar balas + borrar si salen de pantalla según cámara
         for (int i = bullets.size - 1; i >= 0; i--) {
             Bullet b = bullets.get(i);
             b.update(delta);
@@ -134,7 +158,6 @@ public class Ayla {
         if (shootTimer > 0f) return;
         shootTimer = SHOOT_COOLDOWN;
 
-        // límite para evitar acumulación infinita
         if (bullets.size >= MAX_BULLETS_ON_SCREEN) return;
 
         float dir = facingRight ? 1f : -1f;
@@ -168,7 +191,6 @@ public class Ayla {
             else batch.draw(frame, x + width, drawY, -width, height);
         }
 
-        // balas por encima del fondo
         for (Bullet b : bullets) b.draw(batch);
     }
 
@@ -201,8 +223,7 @@ public class Ayla {
     public float getWidth() { return width; }
     public float getHeight() { return height; }
 
-    public com.badlogic.gdx.utils.Array<com.carmen.mijuego.projectiles.Bullet> getBullets() {
+    public Array<Bullet> getBullets() {
         return bullets;
     }
-
 }

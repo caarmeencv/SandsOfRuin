@@ -1,38 +1,30 @@
 package com.carmen.mijuego.world;
 
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.carmen.mijuego.enemies.Cactus;
 
 public class CactusManager {
 
-    private static final float MIN_DIST = 900f;
-    private static final float MAX_DIST = 1700f;
-    private static final float SPAWN_MARGIN = 250f;
     private static final float CACTUS_HEIGHT = 90f;
+    private static final float CACTUS_Y = 180f;
 
     private final Texture cactusPink;
     private final Texture cactusYellow;
 
     private final Array<Cactus> cactuses = new Array<>();
-    private float nextSpawnX;
 
-    public CactusManager(Texture pink, Texture yellow, float startX) {
+    public CactusManager(Texture pink, Texture yellow) {
         this.cactusPink = pink;
         this.cactusYellow = yellow;
-        this.nextSpawnX = startX;
     }
 
-    public void update(float camLeft, float camRight) {
-        if (camRight >= nextSpawnX) {
-            Texture tex = MathUtils.randomBoolean() ? cactusPink : cactusYellow;
-            float x = camRight + SPAWN_MARGIN;
-            cactuses.add(new Cactus(tex, x, 180f, CACTUS_HEIGHT));
+    public void spawnCactusAt(float x, boolean pink) {
+        Texture tex = pink ? cactusPink : cactusYellow;
+        cactuses.add(new Cactus(tex, x, CACTUS_Y, CACTUS_HEIGHT));
+    }
 
-            nextSpawnX = camRight + MathUtils.random(MIN_DIST, MAX_DIST);
-        }
-
+    public void update(float camLeft) {
         for (int i = cactuses.size - 1; i >= 0; i--) {
             if (cactuses.get(i).isOffScreenLeft(camLeft)) {
                 cactuses.removeIndex(i);
@@ -42,5 +34,20 @@ public class CactusManager {
 
     public Array<Cactus> getCactuses() {
         return cactuses;
+    }
+
+    /** True si hay algún cactus visible/activo en cámara (con margen). */
+    public boolean hasActive(float camLeft, float camRight) {
+        for (int i = 0; i < cactuses.size; i++) {
+            Cactus c = cactuses.get(i);
+            float x = c.getBounds().x;
+            if (x > camLeft - 200f && x < camRight + 200f) return true;
+        }
+        return false;
+    }
+
+    /** Borra todos los cactus (para entrar en fase 5 sin nada). */
+    public void clear() {
+        cactuses.clear();
     }
 }

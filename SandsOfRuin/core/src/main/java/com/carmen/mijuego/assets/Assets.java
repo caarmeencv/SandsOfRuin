@@ -24,6 +24,21 @@ public class Assets {
     public static final AssetDescriptor<Texture> NEAR =
         new AssetDescriptor<>(AssetPaths.BG_DESERT_NEAR, Texture.class);
 
+    // ===== DECOR FINAL DESIERTO =====
+    public static final AssetDescriptor<Texture> SPHINX_PYRAMID =
+        new AssetDescriptor<>(AssetPaths.SPHINX_PYRAMID, Texture.class);
+
+    public static final AssetDescriptor<Texture> ENTRANCE_PYRAMID =
+        new AssetDescriptor<>(AssetPaths.ENTRANCE_PYRAMID, Texture.class);
+
+    // ✅ ===== CREDITS =====
+    public static final AssetDescriptor<Texture> SCREEN_CREDITS_BG =
+        new AssetDescriptor<>(AssetPaths.BG_CREDITS, Texture.class);
+    public static final AssetDescriptor<Texture> SCREEN_OPTIONS_BG =
+        new AssetDescriptor<>(AssetPaths.BG_OPTIONS, Texture.class);
+    public static final AssetDescriptor<Texture> SCREEN_ACHIEVEMENTS_BG =
+        new AssetDescriptor<>(AssetPaths.BG_ACHIEVEMENTS, Texture.class);
+
     // ===== AYLA =====
     public static final AssetDescriptor<Texture> AYLA_RUN =
         new AssetDescriptor<>(AssetPaths.AYLA_RUN, Texture.class);
@@ -166,6 +181,14 @@ public class Assets {
         manager.load(RUINS);
         manager.load(MID);
         manager.load(NEAR);
+        manager.load(SPHINX_PYRAMID);
+        manager.load(ENTRANCE_PYRAMID);
+
+        // ✅ Credits
+        manager.load(SCREEN_CREDITS_BG);
+        manager.load(SCREEN_OPTIONS_BG);
+        manager.load(SCREEN_ACHIEVEMENTS_BG);
+
 
         // Ayla
         manager.load(AYLA_RUN);
@@ -270,6 +293,13 @@ public class Assets {
         setLinear(RUINS);
         setLinear(MID);
         setLinear(NEAR);
+        setLinear(SPHINX_PYRAMID);
+        setLinear(ENTRANCE_PYRAMID);
+
+        // ✅ Credits
+        setLinear(SCREEN_CREDITS_BG);
+        setLinear(SCREEN_OPTIONS_BG);
+        setLinear(SCREEN_ACHIEVEMENTS_BG);
 
         setLinear(AYLA_RUN);
         setLinear(AYLA_IDLE);

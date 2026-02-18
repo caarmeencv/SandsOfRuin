@@ -13,6 +13,15 @@ public final class AssetPaths {
     public static final String BG_DESERT_MID    = "backgrounds/desert/02medio.png";
     public static final String BG_DESERT_NEAR   = "backgrounds/desert/01cerca.png";
 
+    // Decoración final desierto (zona pirámide)
+    public static final String SPHINX_PYRAMID   = "backgrounds/desert/sphinx_pyramid.png";
+    public static final String ENTRANCE_PYRAMID = "backgrounds/desert/entrance_pyramid.png";
+
+    // ✅ Fondo de créditos
+    public static final String BG_CREDITS = "backgrounds/credits/credits_background.png";
+    public static final String BG_OPTIONS = "backgrounds/options/options_background.png";
+    public static final String BG_ACHIEVEMENTS = "backgrounds/achievements/achievements_background.png";
+
     // Imagenes de Ayla
     public static final String AYLA_RUN  = "characters/ayla/ayla_run.png";
     public static final String AYLA_IDLE = "characters/ayla/ayla_idle.png";
@@ -35,11 +44,11 @@ public final class AssetPaths {
     // Pantallas
     public static final String SCREEN_INTRO = "screens/intro/IntroScreen.png";
 
-    public static final String SCREEN_MENU_BG              = "screens/menu/MenuScreen.png";
-    public static final String SCREEN_MENU_BTN_GAME        = "screens/menu/GameButton.png";
-    public static final String SCREEN_MENU_BTN_OPTIONS     = "screens/menu/OptionsButton.png";
-    public static final String SCREEN_MENU_BTN_CREDITS     = "screens/menu/CreditsButton.png";
-    public static final String SCREEN_MENU_BTN_ACHIEVEMENTS= "screens/menu/AchievementsButton.png";
+    public static final String SCREEN_MENU_BG               = "screens/menu/MenuScreen.png";
+    public static final String SCREEN_MENU_BTN_GAME         = "screens/menu/GameButton.png";
+    public static final String SCREEN_MENU_BTN_OPTIONS      = "screens/menu/OptionsButton.png";
+    public static final String SCREEN_MENU_BTN_CREDITS      = "screens/menu/CreditsButton.png";
+    public static final String SCREEN_MENU_BTN_ACHIEVEMENTS = "screens/menu/AchievementsButton.png";
 
     // Enemies - Cactus
     public static final String CACTUS_PINK   = "enemies/cactus/Pink_Cactus.png";
@@ -58,6 +67,7 @@ public final class AssetPaths {
     public static final String TANK_DEAD    = "enemies/tank/tank_dead.png";
 
     // ===================== AUDIO =====================
+
     // Efectos (Sound)
     public static final String SFX_AYLA_DAMAGE       = "audio/effects/AylaDamage.mp3";
     public static final String SFX_EXPLOSION_GRENADE = "audio/effects/ExplosionGrenade.mp3";

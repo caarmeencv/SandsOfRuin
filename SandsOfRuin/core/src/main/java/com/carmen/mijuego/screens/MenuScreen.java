@@ -136,7 +136,6 @@ public class MenuScreen implements Screen {
 
     @Override
     public void show() {
-        // ✅ misma música que intro (no reinicia)
         game.audio.playMusic(Assets.MUS_INTRO_THEME, true);
     }
 
@@ -145,8 +144,25 @@ public class MenuScreen implements Screen {
         updatePointer();
 
         if (Gdx.input.justTouched()) {
+
             if (hoverGame) {
                 game.setScreen(new DesertScreen(game));
+                return;
+            }
+
+            if (hoverOptions) {
+                game.setScreen(new OptionsScreen(game));
+                return;
+            }
+
+            if (hoverCredits) {
+                game.setScreen(new CreditsScreen(game));
+                return;
+            }
+
+            if (hoverAchievements) {
+                // ✅ Tu clase se llama RecordsScreen
+                game.setScreen(new RecordsScreen(game));
                 return;
             }
         }
@@ -186,7 +202,6 @@ public class MenuScreen implements Screen {
 
     @Override
     public void dispose() {
-        // ❌ NO disposes bg/botones (AssetManager)
         font.dispose();
     }
 }
