@@ -18,6 +18,8 @@ public class TankBulletSystem {
     private static final float TANK_BULLET_W = 90f;
     private static final float TANK_BULLET_H = 45f;
     private static final float TANK_BULLET_SPEED = 700f;
+
+    // altura del cañón (ajusta si lo ves alto/bajo)
     private static final float TANK_MUZZLE_Y = 200f;
 
     private final Texture bulletTexture;
@@ -35,15 +37,17 @@ public class TankBulletSystem {
 
             if (t.canShoot(delta)) {
 
-                float muzzleX = t.isFacingRight()
+                boolean right = t.isFacingRight();
+
+                // ✅ Spawn desde el "morro" del tanque según dirección
+                float muzzleX = right
                     ? (t.getX() + t.getWidth())
-                    : t.getX();
+                    : (t.getX() - TANK_BULLET_W);
 
                 float muzzleY = t.getY() + TANK_MUZZLE_Y;
 
-                float velX = t.isFacingRight()
-                    ? TANK_BULLET_SPEED
-                    : -TANK_BULLET_SPEED;
+                // ✅ Velocidad correcta: derecha +, izquierda -
+                float velX = right ? TANK_BULLET_SPEED : -TANK_BULLET_SPEED;
 
                 bullets.add(new Bullet(
                     bulletTexture,

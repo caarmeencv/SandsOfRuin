@@ -42,6 +42,12 @@ public class MenuScreen implements Screen {
     private BitmapFont font;
     private GlyphLayout layout;
 
+    // ✅ NUEVO: texto clicable "¿Cómo jugar?"
+    private final Rectangle rHowTo = new Rectangle();
+    private boolean hoverHowTo = false;
+    private final GlyphLayout howToLayout = new GlyphLayout();
+    private static final String HOWTO_TEXT = "¿Cómo jugar?";
+
     public MenuScreen(Main game) {
         this.game = game;
 
@@ -64,6 +70,7 @@ public class MenuScreen implements Screen {
         layout = new GlyphLayout();
 
         updateLayout();
+        updateHowToLayout(); // ✅ NUEVO
     }
 
     private void updateLayout() {
@@ -99,6 +106,24 @@ public class MenuScreen implements Screen {
         rAchievements.set(rightX, bottomY, btnW, btnH);
     }
 
+    // ✅ NUEVO: calcula posición/rectángulo del texto "¿Cómo jugar?"
+    private void updateHowToLayout() {
+        // el texto va centrado abajo
+        float baseScale = 1.3f; // más pequeño que los botones
+        font.getData().setScale(baseScale);
+
+        howToLayout.setText(font, HOWTO_TEXT);
+
+        float x = (WORLD_W - howToLayout.width) / 2f;
+        float y = 70f; // altura desde abajo (ajústalo)
+
+        // Rectangle usa esquina inferior izquierda:
+        rHowTo.set(x, y - howToLayout.height, howToLayout.width, howToLayout.height);
+
+        // volvemos al tamaño normal para no afectar a los botones
+        font.getData().setScale(2.0f);
+    }
+
     private void updatePointer() {
         pointerWorld.set(Gdx.input.getX(), Gdx.input.getY());
         viewport.unproject(pointerWorld);
@@ -107,6 +132,9 @@ public class MenuScreen implements Screen {
         hoverOptions = rOptions.contains(pointerWorld);
         hoverCredits = rCredits.contains(pointerWorld);
         hoverAchievements = rAchievements.contains(pointerWorld);
+
+        // ✅ NUEVO
+        hoverHowTo = rHowTo.contains(pointerWorld);
     }
 
     private void drawButton(Texture tex, Rectangle r, boolean hover, String text) {
@@ -132,6 +160,23 @@ public class MenuScreen implements Screen {
         font.draw(game.batch, layout, textX, textY);
 
         font.getData().setScale(baseFontScale);
+    }
+
+    // ✅ NUEVO: dibuja el texto “¿Cómo jugar?” abajo
+    private void drawHowTo() {
+        float baseScale = 1.3f;
+        float scale = hoverHowTo ? 1.08f : 1f;
+
+        font.getData().setScale(baseScale * scale);
+        howToLayout.setText(font, HOWTO_TEXT);
+
+        float x = (WORLD_W - howToLayout.width) / 2f;
+        float y = 70f;
+
+        font.draw(game.batch, howToLayout, x, y);
+
+        // restauramos
+        font.getData().setScale(2.0f);
     }
 
     @Override
@@ -161,8 +206,13 @@ public class MenuScreen implements Screen {
             }
 
             if (hoverAchievements) {
-                // ✅ Tu clase se llama RecordsScreen
                 game.setScreen(new RecordsScreen(game));
+                return;
+            }
+
+            // ✅ NUEVO: ir a pantalla de ayuda
+            if (hoverHowTo) {
+                game.setScreen(new HowToPlayScreen(game));
                 return;
             }
         }
@@ -187,6 +237,9 @@ public class MenuScreen implements Screen {
         drawButton(btnCredits, rCredits, hoverCredits, "CREDITOS");
         drawButton(btnAchievements, rAchievements, hoverAchievements, "LOGROS");
 
+        // ✅ NUEVO
+        drawHowTo();
+
         game.batch.end();
     }
 
@@ -194,6 +247,7 @@ public class MenuScreen implements Screen {
     public void resize(int width, int height) {
         viewport.update(width, height, true);
         updateLayout();
+        updateHowToLayout(); // ✅ NUEVO: recalcular rect del texto
     }
 
     @Override public void pause() {}

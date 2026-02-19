@@ -1,8 +1,11 @@
 package com.carmen.mijuego.input;
 
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
@@ -45,6 +48,11 @@ public class Controls implements InputProcessor {
     // Oscurecer al pulsar
     private static final float PRESSED_TINT = 0.75f;
 
+    // ===== CONTADOR (texto al lado del pause) =====
+    private final BitmapFont font;
+    private final GlyphLayout layout = new GlyphLayout();
+    private String counterText = "00:00";
+
     public Controls(Viewport viewport,
                     Texture left, Texture right, Texture jump,
                     Texture shoot, Texture grenade, Texture pause) {
@@ -55,6 +63,15 @@ public class Controls implements InputProcessor {
         this.shoot = shoot;
         this.grenade = grenade;
         this.pause = pause;
+
+        font = new BitmapFont();
+        // ✅ MÁS GRANDE el contador
+        font.getData().setScale(3f);
+    }
+
+    /** Setea el texto del contador (ej: "02:15"). Llámalo desde la Screen. */
+    public void setCounterText(String text) {
+        this.counterText = text;
     }
 
     /**
@@ -73,13 +90,16 @@ public class Controls implements InputProcessor {
         float size = worldH * 0.105f;
         float gap  = worldH * 0.018f;
 
-        // Márgenes seguros para FillViewport (evita recortes en móviles raros)
+        // Márgenes seguros para FitViewport (para botones principales)
         float safePadX = worldW * 0.03f;
         float safePadY = worldH * 0.05f;
 
-        // Ajustes: subir controles abajo + bajar pause
+        // ✅ Márgenes SOLO para el pause (más pegado a la esquina)
+        float pausePadX = worldW * 0.010f;  // más cerca que 0.03
+        float pausePadY = worldH * 0.015f;  // más cerca que 0.05
+
+        // Ajustes: subir controles abajo
         float bottomRaise = worldH * 0.045f;
-        float pauseDrop   = worldH * 0.055f;
 
         float bottomY = camBottom + safePadY + bottomRaise;
 
@@ -98,20 +118,34 @@ public class Controls implements InputProcessor {
         // Granada (encima de izquierda)
         rGrenade.set(rLeft.x, bottomY + size + gap, size, size);
 
-        // Pause (arriba derecha, un poco más pequeño)
+        // ✅ PAUSE: arriba derecha MUY pegado como los corazones
         float pauseSize = size * 0.82f;
-        float pauseX = camRight - safePadX - pauseSize;
-        float pauseY = camTop - safePadY - pauseSize - pauseDrop;
+        float pauseX = camRight - pausePadX - pauseSize;
+        float pauseY = camTop - pausePadY - pauseSize;
         rPause.set(pauseX, pauseY, pauseSize, pauseSize);
     }
 
     public void draw(SpriteBatch batch) {
+        // Botones móvil
         drawButton(batch, left, rLeft, leftPressed);
         drawButton(batch, right, rRight, rightPressed);
         drawButton(batch, jump, rJump, jumpPressed);
         drawButton(batch, shoot, rShoot, shootPressed);
         drawButton(batch, grenade, rGrenade, grenadePressed);
         drawButton(batch, pause, rPause, pausePressed);
+
+        // ✅ Contador a la izquierda del pause (más grande)
+        layout.setText(font, counterText);
+
+        // Separación respecto al botón
+        float spacing = 22f;
+
+        float textX = rPause.x - spacing - layout.width;
+
+        // Alinear verticalmente centrado con el botón de pause
+        float textY = rPause.y + (rPause.height * 0.63f) + (layout.height * 0.35f);
+
+        font.draw(batch, layout, textX, textY);
     }
 
     private void drawButton(SpriteBatch batch, Texture tex, Rectangle r, boolean pressed) {
@@ -134,6 +168,7 @@ public class Controls implements InputProcessor {
         if (pointer == pausePointer) { pausePointer = -1; pausePressed = false; }
     }
 
+    // ===================== INPUT TÁCTIL =====================
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         unproject(screenX, screenY);
@@ -184,10 +219,52 @@ public class Controls implements InputProcessor {
         return true;
     }
 
-    @Override public boolean keyDown(int keycode) { return false; }
-    @Override public boolean keyUp(int keycode) { return false; }
+    // ===================== INPUT TECLADO (ORDENADOR) =====================
+    @Override
+    public boolean keyDown(int keycode) {
+
+        // mover
+        if (keycode == Input.Keys.A) leftPressed = true;
+        if (keycode == Input.Keys.D) rightPressed = true;
+
+        // saltar
+        if (keycode == Input.Keys.W || keycode == Input.Keys.SPACE) jumpPressed = true;
+
+        // disparar normal
+        if (keycode == Input.Keys.K) shootPressed = true;
+
+        // especial
+        if (keycode == Input.Keys.L) grenadePressed = true;
+
+        // pausa
+        if (keycode == Input.Keys.ESCAPE) pausePressed = true;
+
+        return false;
+    }
+
+    @Override
+    public boolean keyUp(int keycode) {
+
+        if (keycode == Input.Keys.A) leftPressed = false;
+        if (keycode == Input.Keys.D) rightPressed = false;
+
+        if (keycode == Input.Keys.W || keycode == Input.Keys.SPACE) jumpPressed = false;
+
+        if (keycode == Input.Keys.K) shootPressed = false;
+        if (keycode == Input.Keys.L) grenadePressed = false;
+
+        if (keycode == Input.Keys.ESCAPE) pausePressed = false;
+
+        return false;
+    }
+
+    // ===================== NO USADOS =====================
     @Override public boolean keyTyped(char character) { return false; }
     @Override public boolean touchDragged(int screenX, int screenY, int pointer) { return false; }
     @Override public boolean mouseMoved(int screenX, int screenY) { return false; }
     @Override public boolean scrolled(float amountX, float amountY) { return false; }
+
+    public void dispose() {
+        font.dispose();
+    }
 }

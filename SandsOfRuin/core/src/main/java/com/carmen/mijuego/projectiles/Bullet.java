@@ -26,16 +26,20 @@ public class Bullet {
         this.width = width;
         this.height = height;
         updateBounds();
-
     }
 
     public void update(float delta) {
-        x += velX * delta;
+        x += velX * delta; // ✅ dirección real
         updateBounds();
     }
 
     public void draw(SpriteBatch batch) {
-        batch.draw(texture, x, y, width, height);
+        // ✅ FLIP VISUAL: si va a la izquierda, dibujar espejo
+        if (velX >= 0) {
+            batch.draw(texture, x, y, width, height);
+        } else {
+            batch.draw(texture, x + width, y, -width, height);
+        }
     }
 
     private void updateBounds() {
@@ -56,5 +60,9 @@ public class Bullet {
 
     public float getX() {
         return x;
+    }
+
+    public float getVelX() {
+        return velX;
     }
 }

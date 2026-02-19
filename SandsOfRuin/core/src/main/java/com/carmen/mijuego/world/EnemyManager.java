@@ -73,22 +73,36 @@ public class EnemyManager {
 
     public void update(float delta, float aylaX, float camLeft, float camRight) {
 
+        // ===== SOLDIERS =====
         for (int i = soldiers.size - 1; i >= 0; i--) {
             Soldier s = soldiers.get(i);
 
-            s.update(delta, aylaX, camLeft, camRight);
             s.setAylaX(aylaX);
+            s.update(delta, aylaX, camLeft, camRight);
 
+            // ✅ si ya terminó el parpadeo -> borrar del array
+            if (s.isGone()) {
+                soldiers.removeIndex(i);
+                continue;
+            }
+
+            // limpieza normal por salir de pantalla
             if (s.isOffScreenLeft(camLeft)) {
                 soldiers.removeIndex(i);
             }
         }
 
+        // ===== TANKS =====
         for (int i = tanks.size - 1; i >= 0; i--) {
             Tank t = tanks.get(i);
 
-            // tu Tank.update(delta, aylaX)
             t.update(delta, aylaX);
+
+            // ✅ si ya terminó el parpadeo -> borrar del array
+            if (t.isGone()) {
+                tanks.removeIndex(i);
+                continue;
+            }
 
             if (t.isOffScreenLeft(camLeft)) {
                 tanks.removeIndex(i);
@@ -102,7 +116,9 @@ public class EnemyManager {
     public boolean hasActiveSoldier(float camLeft, float camRight) {
         for (int i = 0; i < soldiers.size; i++) {
             Soldier s = soldiers.get(i);
-            if (s.isDead()) continue;
+
+            // ✅ si está muerto o gone, no cuenta
+            if (s.isDead() || s.isGone()) continue;
 
             float x = s.getBounds().x;
             if (x > camLeft - 200f && x < camRight + 200f) return true;
@@ -113,7 +129,8 @@ public class EnemyManager {
     public boolean hasActiveTank(float camLeft, float camRight) {
         for (int i = 0; i < tanks.size; i++) {
             Tank t = tanks.get(i);
-            if (t.isDead()) continue;
+
+            if (t.isDead() || t.isGone()) continue;
 
             float x = t.getBounds().x;
             if (x > camLeft - 200f && x < camRight + 200f) return true;

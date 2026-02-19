@@ -38,6 +38,8 @@ public class Assets {
         new AssetDescriptor<>(AssetPaths.BG_OPTIONS, Texture.class);
     public static final AssetDescriptor<Texture> SCREEN_ACHIEVEMENTS_BG =
         new AssetDescriptor<>(AssetPaths.BG_ACHIEVEMENTS, Texture.class);
+    public static final AssetDescriptor<Texture> SCREEN_HOWTOPLAY_BG =
+        new AssetDescriptor<>(AssetPaths.BG_HOWTOPLAY, Texture.class);
 
     // ===== AYLA =====
     public static final AssetDescriptor<Texture> AYLA_RUN =
@@ -188,6 +190,8 @@ public class Assets {
         manager.load(SCREEN_CREDITS_BG);
         manager.load(SCREEN_OPTIONS_BG);
         manager.load(SCREEN_ACHIEVEMENTS_BG);
+        manager.load(SCREEN_HOWTOPLAY_BG);
+
 
 
         // Ayla
@@ -300,6 +304,7 @@ public class Assets {
         setLinear(SCREEN_CREDITS_BG);
         setLinear(SCREEN_OPTIONS_BG);
         setLinear(SCREEN_ACHIEVEMENTS_BG);
+        setLinear(SCREEN_HOWTOPLAY_BG);
 
         setLinear(AYLA_RUN);
         setLinear(AYLA_IDLE);

@@ -64,21 +64,16 @@ public class DesertScreen implements Screen {
     private static final float SPHINX_Y   = GROUND_Y;
     private static final float ENTRANCE_Y = GROUND_Y - 10f;
 
-    // ✅ MÁS PEQUEÑAS
     private static final float SPHINX_SCALE   = 0.55f;
     private static final float ENTRANCE_SCALE = 0.60f;
 
-    // ✅ muy cerca una de otra
     private static final float DECOR_GAP = 420f;
 
     // Cutscene “Ayla entra”
     private boolean inCutscene = false;
     private boolean enteredPhase5Once = false;
 
-    // velocidad automática hacia la entrada
     private static final float AUTO_WALK_SPEED = 260f;
-
-    // cuándo empieza la cutscene (cuando la entrada entra cerca por la derecha)
     private static final float CUTSCENE_TRIGGER_AHEAD = 520f;
 
     private Ayla ayla;
@@ -99,6 +94,12 @@ public class DesertScreen implements Screen {
 
     private ShapeRenderer shapeRenderer;
     private boolean debugHitboxes = true;
+
+    // ✅ CONTADOR (tiempo de nivel)
+    private float levelTimer = 0f;
+
+    // ✅ Pause (para que no se dispare muchas veces al mantener)
+    private boolean pauseLatch = false;
 
     public DesertScreen(Main game) {
         this.game = game;
@@ -193,12 +194,9 @@ public class DesertScreen implements Screen {
             GLOBAL_SPAWN_GAP
         );
 
-        // ✅ cactus casi al empezar
         float camRight = camera.position.x + viewport.getWorldWidth() / 2f;
         spawnDirector.reset(camRight + 40f);
 
-        // ✅ decoraciones al final, juntas
-        // sphinx y entrance cerca y dentro de fase 5
         sphinxX = LevelConfig.F4_END + 1300f;
         entranceX = sphinxX + DECOR_GAP;
     }
@@ -212,14 +210,58 @@ public class DesertScreen implements Screen {
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0, 1);
 
+        // ✅ contador (si quieres que NO cuente en cutscene, cambia a: if(!inCutscene) levelTimer += delta;)
+        levelTimer += delta;
+        controls.setCounterText(formatTime(levelTimer));
+
         float maxScrollX = LevelConfig.DESERT_LENGTH - viewport.getWorldWidth();
         if (maxScrollX < 0f) maxScrollX = 0f;
 
-        // Input normal (pero lo anularemos en cutscene)
-        boolean left  = Gdx.input.isKeyPressed(Input.Keys.LEFT)  || controls.leftPressed;
-        boolean right = Gdx.input.isKeyPressed(Input.Keys.RIGHT) || controls.rightPressed;
-        boolean jump  = Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || controls.jumpPressed;
-        boolean shoot = controls.shootPressed || Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT);
+        // ==========================================================
+        // INPUT: móvil (controls.*) + ordenador (A/D/W/SPACE/K/L)
+        // ==========================================================
+
+        boolean leftKey  = Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A);
+        boolean rightKey = Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D);
+
+        // salto: SPACE o W o Flecha Arriba (si quieres)
+        boolean jumpKey = Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
+            || Gdx.input.isKeyJustPressed(Input.Keys.W)
+            || Gdx.input.isKeyJustPressed(Input.Keys.UP);
+
+        // disparo: K (ordenador) o CTRL (si lo usabas)
+        boolean shootKey = Gdx.input.isKeyPressed(Input.Keys.K)
+            || Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT);
+
+        // especial: L
+        boolean grenadeKey = Gdx.input.isKeyJustPressed(Input.Keys.L);
+
+        // pause: botón móvil o ESC
+        boolean pauseKey = Gdx.input.isKeyPressed(Input.Keys.ESCAPE);
+
+        // combinamos con móvil
+        boolean left  = leftKey  || controls.leftPressed;
+        boolean right = rightKey || controls.rightPressed;
+
+        // ✅ jumpPressed de móvil suele ser “hold”; lo convertimos a “just pressed” con latch
+        // (si prefieres hold, quita este latch y usa: jumpKey || controls.jumpPressed)
+        boolean jump = jumpKey || controls.jumpPressed;
+
+        boolean shoot = shootKey || controls.shootPressed;
+        boolean grenade = grenadeKey || controls.grenadePressed;
+
+        boolean pauseNow = pauseKey || controls.pausePressed;
+
+        // ✅ latch para pause (para que no se active 60 veces por segundo)
+        if (pauseNow && !pauseLatch) {
+            pauseLatch = true;
+            // Aquí tu lógica de pausa: abrir pantalla pause / toggle, etc.
+            // Ejemplo: game.setScreen(new PauseScreen(game, this));  (si tienes)
+            // O un boolean paused = !paused;
+        }
+        if (!pauseNow) {
+            pauseLatch = false;
+        }
 
         // cámara bounds
         float camLeft  = camera.position.x - viewport.getWorldWidth() / 2f;
@@ -228,45 +270,37 @@ public class DesertScreen implements Screen {
         // fase actual
         LevelConfig.Phase phase = LevelConfig.phaseFor(camRight);
 
-        // ✅ al entrar en F5: limpiar TODO para que no haya enemigo tras la esfinge
+        // al entrar en F5: limpiar TODO
         if (phase == LevelConfig.Phase.F5_DECOR_NO_ENEMIES && !enteredPhase5Once) {
             enteredPhase5Once = true;
 
             cactusManager.clear();
             enemyManager.clear();
-
-            // si tu TankBulletSystem no tiene clear(), mira abajo (te lo doy)
             tankBulletSystem.clear();
 
-            // por si había knockback en curso
             knockRemaining = 0f;
         }
 
-        // ✅ activar cutscene cuando la entrada entra en rango (desde F5)
+        // activar cutscene cuando la entrada entra en rango
         if (!inCutscene && phase == LevelConfig.Phase.F5_DECOR_NO_ENEMIES) {
-            // si la entrada está “por la derecha” relativamente cerca
             if (entranceX < camRight + CUTSCENE_TRIGGER_AHEAD) {
                 inCutscene = true;
 
-                // cancelar inputs “pegados” por si acaso
                 controls.leftPressed = false;
                 controls.rightPressed = false;
                 controls.jumpPressed = false;
                 controls.shootPressed = false;
                 controls.grenadePressed = false;
+                controls.pausePressed = false;
             }
         }
 
         // ===================== MOVIMIENTO (normal vs cutscene) =====================
-
         if (inCutscene) {
-            // “Congelar el gameplay”: no input, no knockback, no spawns, no colisiones
-            // pero Ayla avanza sola hasta la entrada (moviendo scrollX)
             scrollX += AUTO_WALK_SPEED * delta;
             if (scrollX > maxScrollX) scrollX = maxScrollX;
 
         } else {
-            // knockback
             if (knockRemaining > 0f) {
                 float step = KNOCKBACK_SPEED * delta;
                 if (step > knockRemaining) step = knockRemaining;
@@ -296,24 +330,25 @@ public class DesertScreen implements Screen {
 
         controls.updateLayout(camera, viewport);
 
-        // actualizar fase con camRight ya actualizado
+        // fase actual actualizada
         phase = LevelConfig.phaseFor(camRight);
 
         // Ayla siempre anclada a pantalla
         ayla.setX(camLeft + AYLA_SCREEN_X);
 
-        // ✅ Ayla update: en cutscene, forzar que “camine” (right=true) y sin disparar/saltar
         boolean movingVisual;
         if (inCutscene) {
             movingVisual = true;
             ayla.update(delta, false, true, false, false, GROUND_Y, camLeft, camRight);
         } else {
             movingVisual = (left ^ right);
+
+            // ✅ granada: si tu Ayla.update no tiene parámetro, ignora "grenade"
+            // aquí no lo paso porque tu firma actual es: update(delta,left,right,jump,shoot,...)
             ayla.update(delta, left, right, jump, shoot, GROUND_Y, camLeft, camRight);
         }
 
         // ===================== SPAWNS / UPDATES =====================
-
         if (!inCutscene) {
             spawnDirector.update(phase, camLeft, camRight);
         }
@@ -322,7 +357,6 @@ public class DesertScreen implements Screen {
         enemyManager.update(delta, ayla.getX(), camLeft, camRight);
         tankBulletSystem.update(delta, camLeft, camRight, enemyManager.getTanks());
 
-        // ✅ colisiones OFF en cutscene (entrada sin hitbox + nada molesta)
         if (!inCutscene) {
             collisionSystem.update(
                 delta,
@@ -341,7 +375,6 @@ public class DesertScreen implements Screen {
 
         parallax.render(game.batch, scrollX);
 
-        // F5: sphinx detrás de Ayla
         if (phase == LevelConfig.Phase.F5_DECOR_NO_ENEMIES) {
             drawSphinxIfVisible(camLeft, camRight);
         }
@@ -352,17 +385,15 @@ public class DesertScreen implements Screen {
 
         tankBulletSystem.draw(game.batch);
 
-        // Ayla
         ayla.draw(game.batch, movingVisual);
 
-        // ✅ entrada SIEMPRE encima de Ayla (para efecto “entra”)
         if (phase == LevelConfig.Phase.F5_DECOR_NO_ENEMIES) {
             drawEntranceIfVisible(camLeft, camRight);
         }
 
         livesHUD.draw(game.batch, camLeft, camTop);
 
-        // ✅ en cutscene puedes ocultar controles para que se note “cinemática”
+        // ✅ controles visibles fuera de cutscene
         if (!inCutscene) {
             controls.draw(game.batch);
         }
@@ -370,6 +401,13 @@ public class DesertScreen implements Screen {
         game.batch.end();
 
         if (debugHitboxes) debugRender();
+    }
+
+    private String formatTime(float seconds) {
+        int total = (int) seconds;
+        int min = total / 60;
+        int sec = total % 60;
+        return String.format("%02d:%02d", min, sec);
     }
 
     private void drawSphinxIfVisible(float camLeft, float camRight) {
@@ -490,5 +528,7 @@ public class DesertScreen implements Screen {
     public void dispose() {
         if (shapeRenderer != null) shapeRenderer.dispose();
         // ✅ NO disposes textures del AssetManager
+        // Si quieres liberar font del Controls al salir:
+        // controls.dispose();
     }
 }

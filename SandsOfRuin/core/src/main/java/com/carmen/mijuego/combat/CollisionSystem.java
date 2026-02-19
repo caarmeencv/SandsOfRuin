@@ -8,19 +8,6 @@ import com.carmen.mijuego.enemies.Soldier;
 import com.carmen.mijuego.enemies.Tank;
 import com.carmen.mijuego.projectiles.Bullet;
 
-/**
- * Sistema central de colisiones del nivel.
- * Gestiona:
- *  - Ayla vs cactus
- *  - Ayla vs tank (cuerpo)
- *  - Balas de Soldier -> Ayla
- *  - Balas de Tank -> Ayla
- *  - Balas de Ayla -> Soldier
- *  - Balas de Ayla -> Tank
- *
- * El efecto del golpe (knockback, perder vida, sonido...)
- * se ejecuta mediante Runnable onHit.
- */
 public class CollisionSystem {
 
     private static final float HIT_DELAY = 0.55f;
@@ -59,7 +46,10 @@ public class CollisionSystem {
         ======================================== */
         if (cooldown <= 0f) {
             for (Tank t : tanks) {
-                if (!t.isDead() && aylaBounds.overlaps(t.getBounds())) {
+                // ✅ no colisiona si está en destroy/dead/gone
+                if (t.isDead() || t.isDestroying() || t.isGone()) continue;
+
+                if (aylaBounds.overlaps(t.getBounds())) {
                     triggerHit(onHit);
                     return;
                 }
@@ -71,6 +61,7 @@ public class CollisionSystem {
         ======================================== */
         if (cooldown <= 0f) {
             for (Soldier s : soldiers) {
+                // aunque esté dead/gone, sus balas pueden existir un instante, está bien.
                 Array<Bullet> bullets = s.getBullets();
 
                 for (int i = bullets.size - 1; i >= 0; i--) {
@@ -110,7 +101,10 @@ public class CollisionSystem {
             if (!ab.isAlive()) continue;
 
             for (Soldier s : soldiers) {
-                if (!s.isDead() && ab.getBounds().overlaps(s.getBounds())) {
+                // ✅ no pegar a muertos/gone (y en hurt ya no hay hitbox, pero esto lo refuerza)
+                if (s.isDead() || s.isGone()) continue;
+
+                if (ab.getBounds().overlaps(s.getBounds())) {
                     ab.kill();
                     s.hitByAylaBullet();
                     break;
@@ -126,7 +120,8 @@ public class CollisionSystem {
             if (!ab.isAlive()) continue;
 
             for (Tank t : tanks) {
-                if (t.isDead() || t.isDestroying()) continue;
+                // ✅ no pegar a dead/destroy/gone
+                if (t.isDead() || t.isDestroying() || t.isGone()) continue;
 
                 if (ab.getBounds().overlaps(t.getBounds())) {
                     ab.kill();
@@ -139,8 +134,6 @@ public class CollisionSystem {
 
     private void triggerHit(Runnable onHit) {
         cooldown = HIT_DELAY;
-        if (onHit != null) {
-            onHit.run();
-        }
+        if (onHit != null) onHit.run();
     }
 }

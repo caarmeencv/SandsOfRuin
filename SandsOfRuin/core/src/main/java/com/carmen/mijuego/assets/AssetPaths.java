@@ -18,9 +18,10 @@ public final class AssetPaths {
     public static final String ENTRANCE_PYRAMID = "backgrounds/desert/entrance_pyramid.png";
 
     // ✅ Fondo de créditos
-    public static final String BG_CREDITS = "backgrounds/credits/credits_background.png";
-    public static final String BG_OPTIONS = "backgrounds/options/options_background.png";
-    public static final String BG_ACHIEVEMENTS = "backgrounds/achievements/achievements_background.png";
+    public static final String BG_CREDITS = "screens/credits/credits_background.png";
+    public static final String BG_OPTIONS = "screens/options/options_background.png";
+    public static final String BG_ACHIEVEMENTS = "screens/achievements/achievements_background.png";
+    public static final String BG_HOWTOPLAY = "screens/howtoplay/howtoplay_background.png";
 
     // Imagenes de Ayla
     public static final String AYLA_RUN  = "characters/ayla/ayla_run.png";

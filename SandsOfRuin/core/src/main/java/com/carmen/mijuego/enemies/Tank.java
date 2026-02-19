@@ -7,26 +7,18 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 
-/**
- * Tank:
- * - tank_move: spritesheet horizontal 4 frames (loop)
- * - tank_idle: sprite único
- * - 3 disparos -> tank_destroy: spritesheet 15 frames (play once) -> tank_dead (sprite único)
- * - Hitbox: 3/4 ancho y ~40% alto
- */
 public class Tank {
 
-    private enum State { MOVE, IDLE, DESTROY, DEAD }
+    private enum State { MOVE, IDLE, DESTROY, DEAD, GONE }
 
     private static final int MOVE_FRAMES = 4;
     private static final int DESTROY_FRAMES = 15;
 
-    // ✅ MÁS GRANDE
     private static final float SCALE = 1.60f;
 
     // IA
     private static final float MOVE_SPEED = 230f;
-    private static final float STOP_DISTANCE = 520f; // se para cerca de Ayla
+    private static final float STOP_DISTANCE = 520f;
 
     // Vida
     private static final int HP = 3;
@@ -37,11 +29,18 @@ public class Tank {
 
     // Animación
     private static final float MOVE_FRAME_TIME = 0.10f;
-    private static final float DESTROY_FRAME_TIME = 0.06f; // 15 frames -> ~0.9s
+    private static final float DESTROY_FRAME_TIME = 0.06f;
 
-    // --- DISPARO ---
-    private static final float SHOOT_COOLDOWN = 2.2f; // cada 2.2s
+    // Disparo (cooldown)
+    private static final float SHOOT_COOLDOWN = 2.2f;
     private float shootTimer = 0f;
+
+    // Blink dead
+    private static final int BLINK_TIMES = 3;
+    private static final float BLINK_INTERVAL = 0.10f;
+    private float blinkTimer = 0f;
+    private int blinkToggles = 0;
+    private boolean visible = true;
 
     private float x, y;
     private boolean facingRight = false;
@@ -49,19 +48,15 @@ public class Tank {
     private State state = State.MOVE;
     private float stateTime = 0f;
 
-    // Texturas
     private final Texture idleTex;
     private final Texture deadTex;
 
-    // Animaciones
     private final Animation<TextureRegion> moveAnim;
     private final Animation<TextureRegion> destroyAnim;
 
-    // Tamaño final en mundo (según frame del move sheet)
     private final float width;
     private final float height;
 
-    // Hitbox
     private final Rectangle bounds = new Rectangle();
 
     public Tank(Texture tankIdle,
@@ -77,7 +72,6 @@ public class Tank {
         this.x = startX;
         this.y = startY;
 
-        // ✅ frame size calculado
         int moveFrameW = tankMoveSheet.getWidth() / MOVE_FRAMES;
         int moveFrameH = tankMoveSheet.getHeight();
 
@@ -90,7 +84,6 @@ public class Tank {
         updateBounds();
     }
 
-    /** Construye animación desde spritesheet horizontal (1 fila). */
     private Animation<TextureRegion> buildAnimHorizontal(Texture sheet, int frames, float frameTime, boolean loop) {
         int frameW = sheet.getWidth() / frames;
         int frameH = sheet.getHeight();
@@ -98,9 +91,7 @@ public class Tank {
         TextureRegion[][] split = TextureRegion.split(sheet, frameW, frameH);
 
         Array<TextureRegion> regions = new Array<>(frames);
-        for (int i = 0; i < frames; i++) {
-            regions.add(split[0][i]);
-        }
+        for (int i = 0; i < frames; i++) regions.add(split[0][i]);
 
         Animation<TextureRegion> anim = new Animation<>(frameTime, regions);
         anim.setPlayMode(loop ? Animation.PlayMode.LOOP : Animation.PlayMode.NORMAL);
@@ -110,23 +101,36 @@ public class Tank {
     public void update(float delta, float aylaX) {
         stateTime += delta;
 
-        // si está muerto, no hace nada
-        if (state == State.DEAD) {
-            updateBounds();
+        if (state == State.GONE) {
             return;
         }
 
-        // si está destruyéndose: cuando acaba la animación -> DEAD
+        // DESTROY: cuando termina animación -> DEAD blink
         if (state == State.DESTROY) {
             if (destroyAnim.isAnimationFinished(stateTime)) {
-                state = State.DEAD;
-                stateTime = 0f;
+                enterDeadBlink();
             }
             updateBounds();
             return;
         }
 
-        // mirar hacia Ayla
+        // DEAD: blink y luego GONE
+        if (state == State.DEAD) {
+            blinkTimer += delta;
+            if (blinkTimer >= BLINK_INTERVAL) {
+                blinkTimer = 0f;
+                visible = !visible;
+                blinkToggles++;
+
+                if (blinkToggles >= BLINK_TIMES * 2) {
+                    state = State.GONE;
+                }
+            }
+            updateBounds();
+            return;
+        }
+
+        // MOVE / IDLE normal
         facingRight = aylaX > x;
 
         float dx = aylaX - x;
@@ -143,9 +147,9 @@ public class Tank {
         updateBounds();
     }
 
-    /** Cooldown de disparo. Llama a esto UNA vez por frame. */
+    /** Llamar 1 vez por frame. Si devuelve true, dispara (en TankBulletSystem). */
     public boolean canShoot(float delta) {
-        if (state == State.DEAD || state == State.DESTROY) return false;
+        if (state == State.DEAD || state == State.DESTROY || state == State.GONE) return false;
 
         shootTimer += delta;
         if (shootTimer >= SHOOT_COOLDOWN) {
@@ -155,18 +159,36 @@ public class Tank {
         return false;
     }
 
-    /** Llamar cuando una bala de Ayla golpea al tanque. */
     public void hitByAylaBullet() {
-        if (state == State.DEAD || state == State.DESTROY) return;
+        // ✅ si ya está destruyéndose o muerto, NO reinicia animación
+        if (state == State.DESTROY || state == State.DEAD || state == State.GONE) return;
 
         hitsTaken++;
         if (hitsTaken >= HP) {
             state = State.DESTROY;
-            stateTime = 0f; // reiniciar para reproducir destroy desde frame 0
+            stateTime = 0f;
+
+            // ✅ sin hitbox durante DESTROY (y luego tampoco)
+            bounds.set(0, 0, 0, 0);
         }
     }
 
+    private void enterDeadBlink() {
+        state = State.DEAD;
+        stateTime = 0f;
+
+        blinkTimer = 0f;
+        blinkToggles = 0;
+        visible = true;
+
+        // ✅ sin hitbox en DEAD
+        bounds.set(0, 0, 0, 0);
+    }
+
     public void draw(SpriteBatch batch) {
+        if (state == State.GONE) return;
+        if (state == State.DEAD && !visible) return;
+
         float drawY = y - FOOT_OFFSET;
 
         if (state == State.DEAD) {
@@ -185,7 +207,6 @@ public class Tank {
             return;
         }
 
-        // MOVE
         TextureRegion frame = moveAnim.getKeyFrame(stateTime, true);
         drawRegion(batch, frame, drawY);
     }
@@ -201,12 +222,17 @@ public class Tank {
     }
 
     private void updateBounds() {
-        // Hitbox: 3/4 ancho y ~40% alto
+        // ✅ sin hitbox en DESTROY/DEAD/GONE
+        if (state == State.DESTROY || state == State.DEAD || state == State.GONE) {
+            bounds.set(0, 0, 0, 0);
+            return;
+        }
+
         float hitW = width * 0.75f;
         float hitH = height * 0.40f;
 
         float hitX = x + (width - hitW) / 2f;
-        float hitY = y; // desde el suelo
+        float hitY = y;
 
         if (hitW < 10f) hitW = 10f;
         if (hitH < 10f) hitH = 10f;
@@ -216,14 +242,14 @@ public class Tank {
 
     public Rectangle getBounds() { return bounds; }
 
-    public boolean isDead() { return state == State.DEAD; }
+    public boolean isDead() { return state == State.DEAD || state == State.GONE; }
     public boolean isDestroying() { return state == State.DESTROY; }
+    public boolean isGone() { return state == State.GONE; }
 
     public boolean isOffScreenLeft(float camLeft) {
         return x + width < camLeft - 700f;
     }
 
-    // --- GETTERS necesarios para disparar desde DesertScreen ---
     public float getX() { return x; }
     public float getY() { return y; }
     public float getWidth() { return width; }
