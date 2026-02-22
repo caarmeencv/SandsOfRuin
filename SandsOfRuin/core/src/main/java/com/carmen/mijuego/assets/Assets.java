@@ -111,6 +111,26 @@ public class Assets {
     public static final AssetDescriptor<Texture> TANK_DEAD =
         new AssetDescriptor<>(AssetPaths.TANK_DEAD, Texture.class);
 
+    // ===== PYRAMID =====
+    public static final AssetDescriptor<Texture> PYR_WALL =
+        new AssetDescriptor<>(AssetPaths.BG_PYRAMID_WALL, Texture.class);
+
+    public static final AssetDescriptor<Texture> PYR_GROUND =
+        new AssetDescriptor<>(AssetPaths.BG_PYRAMID_GROUND, Texture.class);
+
+    // ===== MUMMY =====
+    public static final AssetDescriptor<Texture> MUMMY_IDLE =
+        new AssetDescriptor<>(AssetPaths.MUMMY_IDLE, Texture.class);
+
+    public static final AssetDescriptor<Texture> MUMMY_WALK =
+        new AssetDescriptor<>(AssetPaths.MUMMY_WALK, Texture.class);
+
+    public static final AssetDescriptor<Texture> MUMMY_HURT =
+        new AssetDescriptor<>(AssetPaths.MUMMY_HURT, Texture.class);
+
+    public static final AssetDescriptor<Texture> MUMMY_DEAD =
+        new AssetDescriptor<>(AssetPaths.MUMMY_DEAD, Texture.class);
+
     // ===================== AUDIO =====================
 
     // ===== SFX (Sound) =====
@@ -230,6 +250,16 @@ public class Assets {
         manager.load(SOLDIER_HURT);
         manager.load(SOLDIER_DEAD);
 
+        // Pyramid
+        manager.load(PYR_WALL);
+        manager.load(PYR_GROUND);
+
+// Mummy
+        manager.load(MUMMY_IDLE);
+        manager.load(MUMMY_WALK);
+        manager.load(MUMMY_HURT);
+        manager.load(MUMMY_DEAD);
+
         // Tank
         manager.load(TANK_IDLE);
         manager.load(TANK_MOVE);
@@ -265,6 +295,7 @@ public class Assets {
         manager.load(MUS_PAUSE_THEME);
         manager.load(MUS_PYRAMID_THEME);
         manager.load(MUS_VICTORY_THEME);
+
     }
 
     public void finishLoading() {
@@ -340,6 +371,16 @@ public class Assets {
         setLinear(TANK_MOVE);
         setLinear(TANK_DESTROY);
         setLinear(TANK_DEAD);
+
+        // Pyramid
+        setLinear(PYR_WALL);
+        setLinear(PYR_GROUND);
+
+// Mummy
+        setLinear(MUMMY_IDLE);
+        setLinear(MUMMY_WALK);
+        setLinear(MUMMY_HURT);
+        setLinear(MUMMY_DEAD);
     }
 
     private void setLinear(AssetDescriptor<Texture> desc) {

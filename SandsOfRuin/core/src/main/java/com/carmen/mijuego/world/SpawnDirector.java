@@ -72,7 +72,7 @@ public class SpawnDirector {
     public void update(LevelConfig.Phase phase, float camLeft, float camRight) {
 
         // F5: absolutamente nada
-        if (phase == LevelConfig.Phase.F5_DECOR_NO_ENEMIES) return;
+        if (phase == LevelConfig.Phase.F5_PYRAMID_FREEZE) return;
 
         if (hasAnyActive(camLeft, camRight)) return;
         if (camRight < nextSpawnX) return;
@@ -96,7 +96,6 @@ public class SpawnDirector {
     private float baseAhead(LevelConfig.Phase phase) {
         switch (phase) {
             case F1_CACTUS:
-                // ✅ MUY pronto
                 return 80f;
             case F2_CACTUS_SOLDIERS:
                 return 650f;
@@ -104,7 +103,7 @@ public class SpawnDirector {
                 return 720f;
             case F4_SOLDIERS_TANKS:
                 return 720f;
-            case F5_DECOR_NO_ENEMIES:
+            case F5_PYRAMID_FREEZE:
                 return 999999f;
         }
         return 650f;
@@ -113,7 +112,6 @@ public class SpawnDirector {
     private float nextGap(LevelConfig.Phase phase) {
         switch (phase) {
             case F1_CACTUS:
-                // intentos frecuentes (la separación real manda)
                 return MathUtils.random(450f, 650f);
             case F2_CACTUS_SOLDIERS:
                 return MathUtils.random(650f, 950f);
@@ -121,7 +119,7 @@ public class SpawnDirector {
                 return MathUtils.random(650f, 950f);
             case F4_SOLDIERS_TANKS:
                 return MathUtils.random(600f, 900f);
-            case F5_DECOR_NO_ENEMIES:
+            case F5_PYRAMID_FREEZE:
                 return 999999f;
         }
         return 900f;
@@ -142,8 +140,8 @@ public class SpawnDirector {
             case F4_SOLDIERS_TANKS:
                 return MathUtils.randomBoolean(0.55f) ? SpawnType.SOLDIER : SpawnType.TANK;
 
-            case F5_DECOR_NO_ENEMIES:
-                return SpawnType.CACTUS;
+            case F5_PYRAMID_FREEZE:
+                return SpawnType.CACTUS; // da igual, no se usa
         }
         return SpawnType.CACTUS;
     }

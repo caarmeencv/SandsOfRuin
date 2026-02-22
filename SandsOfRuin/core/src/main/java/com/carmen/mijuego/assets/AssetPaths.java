@@ -98,4 +98,14 @@ public final class AssetPaths {
     public static final String MUS_PAUSE_THEME         = "audio/themes/PauseTheme.mp3";
     public static final String MUS_PYRAMID_THEME       = "audio/themes/PyramidTheme.mp3";
     public static final String MUS_VICTORY_THEME       = "audio/themes/VictoryTheme.mp3";
+
+    // ===== PYRAMID (INTERIOR) =====
+    public static final String BG_PYRAMID_WALL   = "backgrounds/pyramid/pyramid_wall.png";
+    public static final String BG_PYRAMID_GROUND = "backgrounds/pyramid/pyramid_ground.png";
+
+    // ===== MUMMY (BOSS) =====
+    public static final String MUMMY_IDLE = "enemies/mummy/mummy_idle.png";
+    public static final String MUMMY_WALK = "enemies/mummy/mummy_walk.png"; // spritesheet 410x608
+    public static final String MUMMY_HURT = "enemies/mummy/mummy_hurt.png"; // spritesheet 410x608
+    public static final String MUMMY_DEAD = "enemies/mummy/mummy_dead.png";
 }

@@ -9,16 +9,18 @@ public class ParallaxBackground {
 
     private static class Layer {
         final Texture tex;
-        final float factor;   // 0..1.. (1 = misma velocidad que el mundo)
+        final float factor;
         final float y;
         final float height;
-        final boolean ignoreSpeedMul; // para que el suelo no se ralentice
+        final boolean repeat;
+        final boolean ignoreSpeedMul;
 
-        Layer(Texture tex, float factor, float y, float height, boolean ignoreSpeedMul) {
+        Layer(Texture tex, float factor, float y, float height, boolean repeat, boolean ignoreSpeedMul) {
             this.tex = tex;
             this.factor = factor;
             this.y = y;
             this.height = height;
+            this.repeat = repeat;
             this.ignoreSpeedMul = ignoreSpeedMul;
         }
     }
@@ -30,7 +32,12 @@ public class ParallaxBackground {
     private final Texture sky;
     private final Layer[] layers;
 
+    // ✅ speedMul ahora escala el MOVIMIENTO, no la posición absoluta
     private float speedMul = 1f;
+
+    // ✅ parallaxScroll acumula cuánto “ha avanzado” el parallax (estable, sin saltos)
+    private float parallaxScroll = 0f;
+    private float prevCamLeft = Float.NaN;
 
     public ParallaxBackground(OrthographicCamera camera,
                               Viewport viewport,
@@ -39,11 +46,13 @@ public class ParallaxBackground {
                               float[] factors,
                               float[] ys,
                               float[] heights,
+                              boolean[] repeat,
                               boolean[] ignoreSpeedMul) {
 
         if (textures.length != factors.length ||
             textures.length != ys.length ||
             textures.length != heights.length ||
+            textures.length != repeat.length ||
             textures.length != ignoreSpeedMul.length) {
             throw new IllegalArgumentException("arrays con distinta longitud");
         }
@@ -55,7 +64,7 @@ public class ParallaxBackground {
 
         layers = new Layer[textures.length];
         for (int i = 0; i < textures.length; i++) {
-            layers[i] = new Layer(textures[i], factors[i], ys[i], heights[i], ignoreSpeedMul[i]);
+            layers[i] = new Layer(textures[i], factors[i], ys[i], heights[i], repeat[i], ignoreSpeedMul[i]);
         }
     }
 
@@ -63,32 +72,87 @@ public class ParallaxBackground {
         this.speedMul = speedMul;
     }
 
-    public void render(SpriteBatch batch, float scrollX) {
-        float camLeft = camera.position.x - worldW * 0.5f;
+    /** Útil si cambias de pantalla o reinicias nivel */
+    public void reset() {
+        parallaxScroll = 0f;
+        prevCamLeft = Float.NaN;
+    }
 
+    public void render(SpriteBatch batch) {
+        float camLeft  = camera.position.x - worldW * 0.5f;
+        float camRight = camLeft + worldW;
+
+        // Inicialización del primer frame
+        if (Float.isNaN(prevCamLeft)) {
+            prevCamLeft = camLeft;
+        }
+
+        // ✅ delta real de cámara (lo que se movió este frame)
+        float camDelta = camLeft - prevCamLeft;
+        prevCamLeft = camLeft;
+
+        // ✅ acumulamos scroll del parallax usando speedMul
+        parallaxScroll += camDelta * speedMul;
+
+        // cielo
         batch.draw(sky, camLeft, 0f, worldW, worldH);
 
         for (Layer layer : layers) {
-            float mul = layer.ignoreSpeedMul ? 1f : speedMul;
-            float layerOffset = scrollX * layer.factor * mul;
-            drawTiled(batch, layer.tex, camLeft, layerOffset, layer.y, layer.height);
+            // Si ignora speedMul (por ejemplo para que el suelo siga), usamos movimiento real de cámara:
+            // - opción A: que ignoreSpeedMul sea “no se congela”
+            // - opción B: si quieres que se congele TODO en la cinemática, pon ignoreSpeedMul=false en todas.
+            float baseScroll = layer.ignoreSpeedMul ? camLeft : parallaxScroll;
+
+            float layerOffset = baseScroll * layer.factor;
+
+            if (layer.repeat) {
+                drawTiledInfinite(batch, layer.tex, camLeft, camRight, layerOffset, layer.y, layer.height);
+            } else {
+                drawNonRepeating(batch, layer.tex, camLeft, camRight, layerOffset, layer.y, layer.height);
+            }
         }
     }
 
-    private void drawTiled(SpriteBatch batch,
-                           Texture tex,
-                           float camLeft,
-                           float layerOffset,
-                           float y,
-                           float height) {
+    private void drawTiledInfinite(SpriteBatch batch,
+                                   Texture tex,
+                                   float camLeft,
+                                   float camRight,
+                                   float layerOffset,
+                                   float y,
+                                   float height) {
 
         float offset = layerOffset % worldW;
         if (offset < 0) offset += worldW;
 
-        float x0 = camLeft - offset;
+        float x = camLeft - offset;
 
-        batch.draw(tex, x0,               y, worldW, height);
-        batch.draw(tex, x0 + worldW,      y, worldW, height);
-        batch.draw(tex, x0 + 2f * worldW, y, worldW, height);
+        while (x > camLeft) x -= worldW;
+
+        while (x < camRight) {
+            batch.draw(tex, x, y, worldW, height);
+            x += worldW;
+        }
+
+        batch.draw(tex, x, y, worldW, height);
+    }
+
+    private void drawNonRepeating(SpriteBatch batch,
+                                  Texture tex,
+                                  float camLeft,
+                                  float camRight,
+                                  float layerOffset,
+                                  float y,
+                                  float height) {
+
+        float x = camLeft - layerOffset;
+
+        while (x > camLeft) x -= worldW;
+
+        while (x < camRight) {
+            batch.draw(tex, x, y, worldW, height);
+            x += worldW;
+        }
+
+        batch.draw(tex, x, y, worldW, height);
     }
 }
