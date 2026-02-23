@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -53,6 +54,9 @@ public class Controls implements InputProcessor {
     private final GlyphLayout layout = new GlyphLayout();
     private String counterText = "00:00";
 
+    // ✅ Cooldown ring
+    private final ShapeRenderer shapeRenderer = new ShapeRenderer();
+
     public Controls(Viewport viewport,
                     Texture left, Texture right, Texture jump,
                     Texture shoot, Texture grenade, Texture pause) {
@@ -65,7 +69,6 @@ public class Controls implements InputProcessor {
         this.pause = pause;
 
         font = new BitmapFont();
-        // ✅ MÁS GRANDE el contador
         font.getData().setScale(3f);
     }
 
@@ -86,24 +89,25 @@ public class Controls implements InputProcessor {
         float camBottom = cam.position.y - worldH / 2f;
         float camTop    = cam.position.y + worldH / 2f;
 
-        // Tamaños relativos (adaptables)
-        float size = worldH * 0.105f;
-        float gap  = worldH * 0.018f;
+        // ✅ MÁS GRANDES
+        float size = worldH * 0.125f;
 
-        // Márgenes seguros para FitViewport (para botones principales)
+        // Un pelín más de separación
+        float gap  = worldH * 0.020f;
+
+        // Márgenes seguros
         float safePadX = worldW * 0.03f;
-        float safePadY = worldH * 0.05f;
+        float safePadY = worldH * 0.035f;
 
-        // ✅ Márgenes SOLO para el pause (más pegado a la esquina)
-        float pausePadX = worldW * 0.010f;  // más cerca que 0.03
-        float pausePadY = worldH * 0.015f;  // más cerca que 0.05
+        // ✅ PAUSE (igual)
+        float pausePadX = worldW * 0.010f;
+        float pausePadY = worldH * 0.015f;
 
-        // Ajustes: subir controles abajo
-        float bottomRaise = worldH * 0.045f;
-
+        // ✅ MÁS ABAJO
+        float bottomRaise = worldH * 0.015f;
         float bottomY = camBottom + safePadY + bottomRaise;
 
-        // Izquierda (abajo izquierda)
+        // Izquierda
         rLeft.set(camLeft + safePadX, bottomY, size, size);
 
         // Derecha
@@ -115,18 +119,52 @@ public class Controls implements InputProcessor {
         // Disparar (a la izquierda del salto)
         rShoot.set(rJump.x - gap - size, bottomY, size, size);
 
-        // Granada (encima de izquierda)
-        rGrenade.set(rLeft.x, bottomY + size + gap, size, size);
+        // ✅ Granada encima del SALTO
+        rGrenade.set(rJump.x, bottomY + size + gap, size, size);
 
-        // ✅ PAUSE: arriba derecha MUY pegado como los corazones
+        // Pause arriba derecha
         float pauseSize = size * 0.82f;
         float pauseX = camRight - pausePadX - pauseSize;
         float pauseY = camTop - pausePadY - pauseSize;
         rPause.set(pauseX, pauseY, pauseSize, pauseSize);
     }
 
+    /** Compatibilidad con tu código antiguo */
     public void draw(SpriteBatch batch) {
-        // Botones móvil
+        draw(batch, 0f, 0f);
+    }
+
+    /**
+     * ✅ Dibuja controles + cooldown rings (debajo del botón)
+     * percent: 0 listo, 1 cooldown completo (se va vaciando)
+     */
+    public void draw(SpriteBatch batch, float shootCooldownPercent, float grenadeCooldownPercent) {
+
+        // =====================
+        // 1) Dibujar rings DEBAJO (si toca)
+        // =====================
+        boolean anyRing = (shootCooldownPercent > 0f) || (grenadeCooldownPercent > 0f);
+        if (anyRing) {
+            batch.end();
+
+            shapeRenderer.setProjectionMatrix(batch.getProjectionMatrix());
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            shapeRenderer.setColor(1f, 1f, 1f, 1f);
+
+            if (shootCooldownPercent > 0f) {
+                drawCooldownRing(rShoot, shootCooldownPercent);
+            }
+            if (grenadeCooldownPercent > 0f) {
+                drawCooldownRing(rGrenade, grenadeCooldownPercent);
+            }
+
+            shapeRenderer.end();
+            batch.begin();
+        }
+
+        // =====================
+        // 2) Dibujar BOTONES ENCIMA
+        // =====================
         drawButton(batch, left, rLeft, leftPressed);
         drawButton(batch, right, rRight, rightPressed);
         drawButton(batch, jump, rJump, jumpPressed);
@@ -134,18 +172,30 @@ public class Controls implements InputProcessor {
         drawButton(batch, grenade, rGrenade, grenadePressed);
         drawButton(batch, pause, rPause, pausePressed);
 
-        // ✅ Contador a la izquierda del pause (más grande)
+        // =====================
+        // 3) Contador
+        // =====================
         layout.setText(font, counterText);
 
-        // Separación respecto al botón
         float spacing = 22f;
-
         float textX = rPause.x - spacing - layout.width;
-
-        // Alinear verticalmente centrado con el botón de pause
         float textY = rPause.y + (rPause.height * 0.63f) + (layout.height * 0.35f);
 
         font.draw(batch, layout, textX, textY);
+    }
+
+    private void drawCooldownRing(Rectangle r, float percent) {
+        float angle = 360f * percent;
+
+        float cx = r.x + r.width / 2f;
+        float cy = r.y + r.height / 2f;
+
+        // un poco más grande que el botón
+        float radius = Math.min(r.width, r.height) * 0.70f;
+
+        int segments = 48;
+
+        shapeRenderer.arc(cx, cy, radius, 90f, -angle, segments);
     }
 
     private void drawButton(SpriteBatch batch, Texture tex, Rectangle r, boolean pressed) {
@@ -222,21 +272,15 @@ public class Controls implements InputProcessor {
     // ===================== INPUT TECLADO (ORDENADOR) =====================
     @Override
     public boolean keyDown(int keycode) {
-
-        // mover
         if (keycode == Input.Keys.A) leftPressed = true;
         if (keycode == Input.Keys.D) rightPressed = true;
 
-        // saltar
         if (keycode == Input.Keys.W || keycode == Input.Keys.SPACE) jumpPressed = true;
 
-        // disparar normal
         if (keycode == Input.Keys.K) shootPressed = true;
 
-        // especial
         if (keycode == Input.Keys.L) grenadePressed = true;
 
-        // pausa
         if (keycode == Input.Keys.ESCAPE) pausePressed = true;
 
         return false;
@@ -266,5 +310,6 @@ public class Controls implements InputProcessor {
 
     public void dispose() {
         font.dispose();
+        shapeRenderer.dispose();
     }
 }

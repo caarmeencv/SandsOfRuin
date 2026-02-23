@@ -8,7 +8,7 @@ import com.badlogic.gdx.math.Rectangle;
 
 public class Mummy {
 
-    public enum State { IDLE, WALK, DYING_HURT, DEAD, GONE }
+    public enum State { IDLE, WALK, DYING_HURT, DEAD }
 
     private static final int FRAME_W = 410;
     private static final int FRAME_H = 608;
@@ -29,11 +29,9 @@ public class Mummy {
     private static final float SPEED = 45f;
     private static final float STOP_DISTANCE = 380f;
 
-    private static final int BLINK_TIMES = 3;
-    private static final float BLINK_INTERVAL = 0.10f;
-    private float blinkTimer = 0f;
-    private int blinkToggles = 0;
-    private boolean visible = true;
+    // ✅ DISPARO MUMMY
+    private static final float SHOOT_COOLDOWN = 1.35f; // cadencia
+    private float shootTimer = 0f;
 
     private static final float HIT_SCALE = 0.40f;
     private static final float HIT_PAD_L = 120f * HIT_SCALE;
@@ -85,29 +83,20 @@ public class Mummy {
         }
     }
 
-    /**
-     * IA simple: va hacia Ayla en X. Mantiene Y fija al suelo.
-     */
     public void update(float delta, float aylaX, float groundY) {
-        if (state == State.GONE) return;
 
-        // Y fija al suelo (no sigue saltos)
+        if (state == State.DEAD) return;
+
         this.y = groundY + FOLLOW_Y_OFFSET;
-
         stateTime += delta;
 
-        if (state == State.DYING_HURT) {
-            if (hurtAnim.isAnimationFinished(stateTime)) enterDeadBlink();
-            return;
-        }
+        // ✅ timer disparo
+        shootTimer -= delta;
+        if (shootTimer < 0f) shootTimer = 0f;
 
-        if (state == State.DEAD) {
-            blinkTimer += delta;
-            if (blinkTimer >= BLINK_INTERVAL) {
-                blinkTimer = 0f;
-                visible = !visible;
-                blinkToggles++;
-                if (blinkToggles >= BLINK_TIMES * 2) state = State.GONE;
+        if (state == State.DYING_HURT) {
+            if (hurtAnim.isAnimationFinished(stateTime)) {
+                enterDead();
             }
             return;
         }
@@ -116,6 +105,7 @@ public class Mummy {
         facingRight = dx > 0;
         float dist = Math.abs(dx);
 
+        // cerca -> se queda IDLE (y aquí podrá disparar)
         if (dist <= STOP_DISTANCE) {
             if (state != State.IDLE) {
                 state = State.IDLE;
@@ -125,6 +115,7 @@ public class Mummy {
             return;
         }
 
+        // lejos -> camina hacia Ayla
         if (state != State.WALK) {
             state = State.WALK;
             stateTime = 0f;
@@ -134,11 +125,23 @@ public class Mummy {
         updateBounds();
     }
 
+    /** ✅ Decide si este frame la momia dispara */
+    public boolean canShoot(float delta) {
+        if (state == State.DEAD || state == State.DYING_HURT) return false;
+
+        // dispara cuando está en IDLE (ya está cerca de Ayla)
+        if (state != State.IDLE) return false;
+
+        if (shootTimer > 0f) return false;
+
+        shootTimer = SHOOT_COOLDOWN;
+        return true;
+    }
+
     public void draw(SpriteBatch batch) {
-        if (state == State.GONE) return;
-        if (state == State.DEAD && !visible) return;
 
         TextureRegion frame;
+
         switch (state) {
             case IDLE: frame = idleFrame; break;
             case WALK: frame = walkAnim.getKeyFrame(stateTime, true); break;
@@ -149,12 +152,14 @@ public class Mummy {
 
         float drawY = y + DRAW_Y_OFFSET;
 
-        if (facingRight) batch.draw(frame, x, drawY, width, height);
-        else batch.draw(frame, x + width, drawY, -width, height);
+        if (facingRight)
+            batch.draw(frame, x, drawY, width, height);
+        else
+            batch.draw(frame, x + width, drawY, -width, height);
     }
 
     public void hitByAylaBullet() {
-        if (state == State.GONE || state == State.DEAD || state == State.DYING_HURT) return;
+        if (state == State.DEAD || state == State.DYING_HURT) return;
 
         hp--;
         if (hp <= 0) {
@@ -164,15 +169,29 @@ public class Mummy {
         }
     }
 
-    private void enterDeadBlink() {
+    private void enterDead() {
         state = State.DEAD;
         stateTime = 0f;
-        blinkTimer = 0f;
-        blinkToggles = 0;
-        visible = true;
         bounds.set(0, 0, 0, 0);
     }
 
+    public void applyWorldScroll(float dx) {
+        if (state == State.DEAD) {
+            x += dx;
+        }
+    }
+
+    // ===== GETTERS =====
+    public float getX() { return x; }
+    public float getY() { return y; }
+    public float getWidth() { return width; }
+    public boolean isFacingRight() { return facingRight; }
+
+    public Rectangle getBounds() { return bounds; }
+    public boolean isDead() { return state == State.DEAD; }
+    public int getHp() { return hp; }
+
+    // ===== anim helpers =====
     private Animation<TextureRegion> buildAnimLoop(Texture sheet, float frameDuration) {
         TextureRegion[] frames = splitAllFrames(sheet);
         Animation<TextureRegion> anim = new Animation<>(frameDuration, frames);
@@ -192,7 +211,7 @@ public class Mummy {
         int h = sheet.getHeight();
 
         if (w % FRAME_W != 0 || h % FRAME_H != 0) {
-            return new TextureRegion[] {
+            return new TextureRegion[]{
                 new TextureRegion(sheet, 0, 0, Math.min(FRAME_W, w), Math.min(FRAME_H, h))
             };
         }
@@ -203,16 +222,15 @@ public class Mummy {
 
         TextureRegion[] out = new TextureRegion[rows * cols];
         int k = 0;
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
+        for (int r = 0; r < rows; r++)
+            for (int c = 0; c < cols; c++)
                 out[k++] = grid[r][c];
-            }
-        }
+
         return out;
     }
 
     private void updateBounds() {
-        if (state == State.DYING_HURT || state == State.DEAD || state == State.GONE) {
+        if (state == State.DYING_HURT || state == State.DEAD) {
             bounds.set(0, 0, 0, 0);
             return;
         }
@@ -227,10 +245,4 @@ public class Mummy {
 
         bounds.set(hitX, hitY, hitW, hitH);
     }
-
-    public Rectangle getBounds() { return bounds; }
-    public boolean isGone() { return state == State.GONE; }
-    public boolean isDead() { return state == State.DEAD || state == State.GONE; }
-    public int getHp() { return hp; }
-    public float getX() { return x; }
 }

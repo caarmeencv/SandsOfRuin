@@ -18,13 +18,23 @@ public class Bullet {
 
     private boolean alive = true;
 
+    // ✅ NUEVO: daño (normal=1, especial=2, etc.)
+    private final int damage;
+
+    /** Constructor normal (compatibilidad). Daño = 1 */
     public Bullet(Texture texture, float startX, float startY, float velX, float width, float height) {
+        this(texture, startX, startY, velX, width, height, 1);
+    }
+
+    /** Constructor con daño */
+    public Bullet(Texture texture, float startX, float startY, float velX, float width, float height, int damage) {
         this.texture = texture;
         this.x = startX;
         this.y = startY;
         this.velX = velX;
         this.width = width;
         this.height = height;
+        this.damage = damage;
         updateBounds();
     }
 
@@ -64,5 +74,10 @@ public class Bullet {
 
     public float getVelX() {
         return velX;
+    }
+
+    // ✅ NUEVO
+    public int getDamage() {
+        return damage;
     }
 }

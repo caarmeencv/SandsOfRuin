@@ -130,11 +130,13 @@ public class DesertScreen implements Screen {
         sphinxTex   = game.assets.get(Assets.SPHINX_PYRAMID);
         entranceTex = game.assets.get(Assets.ENTRANCE_PYRAMID);
 
+        // ✅ Ayla ahora recibe bala normal + bala especial
         ayla = new Ayla(
             game.assets.get(Assets.AYLA_RUN),
             game.assets.get(Assets.AYLA_IDLE),
             game.assets.get(Assets.AYLA_JUMP),
             game.assets.get(Assets.BULLET),
+            game.assets.get(Assets.BULLET_SPECIAL), // <-- asegúrate de que exista en Assets
             0f,
             GROUND_Y
         );
@@ -156,11 +158,8 @@ public class DesertScreen implements Screen {
         float midH    = scaledHeight(mid);
         float nearH   = scaledHeight(near);
 
-        // ✅ IMPORTANTE:
-        // repeat[] controla si la capa tilea (wrap) o NO.
-        // ignoreSpeedMul[] controla si la capa ignora el freeze (suelo).
-        boolean[] repeat = new boolean[]{ false, false, false, true };          // solo near repite
-        boolean[] ignoreSpeedMul = new boolean[]{ false, false, false, true };  // solo near ignora speedMul
+        boolean[] repeat = new boolean[]{ false, false, false, true };
+        boolean[] ignoreSpeedMul = new boolean[]{ false, false, false, true };
 
         parallax = new ParallaxBackground(
             camera,
@@ -252,6 +251,8 @@ public class DesertScreen implements Screen {
 
         boolean jump = jumpKey || controls.jumpPressed;
         boolean shoot = shootKey || controls.shootPressed;
+
+        // ✅ especial
         boolean grenade = grenadeKey || controls.grenadePressed;
 
         boolean pauseNow = pauseKey || controls.pausePressed;
@@ -348,12 +349,16 @@ public class DesertScreen implements Screen {
         if (cutsceneState == CutsceneState.NONE) {
             ayla.setX(camLeft + AYLA_SCREEN_X);
             movingVisual = (left ^ right);
-            ayla.update(delta, left, right, jump, shoot, GROUND_Y, camLeft, camRight);
+
+            // ✅ ahora pasa grenade
+            ayla.update(delta, left, right, jump, shoot, grenade, GROUND_Y, camLeft, camRight);
 
         } else if (cutsceneState == CutsceneState.AUTO_SCROLL_SHOW_DECOR) {
             ayla.setX(camLeft + AYLA_SCREEN_X);
             movingVisual = true;
-            ayla.update(delta, false, true, false, false, GROUND_Y, camLeft, camRight);
+
+            // ✅ ahora pasa grenade (false)
+            ayla.update(delta, false, true, false, false, false, GROUND_Y, camLeft, camRight);
 
         } else if (cutsceneState == CutsceneState.FREEZE_AND_AYLA_WALKS_OFF) {
             movingVisual = true;
@@ -361,7 +366,18 @@ public class DesertScreen implements Screen {
             float newX = ayla.getX() + AYLA_WALK_OFF_SPEED * delta;
             ayla.setX(newX);
 
-            ayla.update(delta, false, true, false, false, GROUND_Y, camLeft, camRight);
+            // ✅ groundY NO existía aquí: era un bug. Debe ser GROUND_Y
+            ayla.update(
+                delta,
+                controls.leftPressed,
+                controls.rightPressed,
+                controls.jumpPressed,
+                controls.shootPressed,
+                controls.grenadePressed,
+                GROUND_Y,
+                camLeft,
+                camRight
+            );
 
             if (ayla.getX() > camRight + EXIT_MARGIN) {
                 game.setScreen(new PyramidScreen(game));
@@ -391,7 +407,7 @@ public class DesertScreen implements Screen {
                 new Runnable() {
                     @Override
                     public void run() {
-                        knockRemaining = 140f;
+                        knockRemaining = KNOCKBACK_DISTANCE;
                     }
                 }
             );
@@ -403,7 +419,6 @@ public class DesertScreen implements Screen {
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
 
-// fondo
         parallax.render(game.batch);
 
         boolean canDrawEnemies = true;
@@ -418,23 +433,24 @@ public class DesertScreen implements Screen {
             tankBulletSystem.draw(game.batch);
         }
 
-// esfinge debajo de Ayla
         if (cutsceneState != CutsceneState.NONE) {
             drawSphinxIfVisible(camLeft, camRight);
         }
 
         ayla.draw(game.batch, movingVisual);
 
-// entrada encima de Ayla
         if (cutsceneState != CutsceneState.NONE) {
             drawEntranceIfVisible(camLeft, camRight);
         }
 
-// HUD
         livesHUD.draw(game.batch, camLeft, camTop);
 
         if (cutsceneState == CutsceneState.NONE) {
-            controls.draw(game.batch);
+            controls.draw(
+                game.batch,
+                ayla.getNormalCooldownPercent(),
+                ayla.getSpecialCooldownPercent()
+            );
         }
 
         game.batch.end();

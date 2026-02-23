@@ -41,6 +41,9 @@ public class Assets {
     public static final AssetDescriptor<Texture> SCREEN_HOWTOPLAY_BG =
         new AssetDescriptor<>(AssetPaths.BG_HOWTOPLAY, Texture.class);
 
+    public static final AssetDescriptor<Texture> TREASURE =
+        new AssetDescriptor<>(AssetPaths.TREASURE, Texture.class);
+
     // ===== AYLA =====
     public static final AssetDescriptor<Texture> AYLA_RUN =
         new AssetDescriptor<>(AssetPaths.AYLA_RUN, Texture.class);
@@ -53,6 +56,11 @@ public class Assets {
     public static final AssetDescriptor<Texture> BULLET =
         new AssetDescriptor<>(AssetPaths.BULLET, Texture.class);
 
+    public static final AssetDescriptor<Texture> BULLET_SPECIAL =
+        new AssetDescriptor<>(AssetPaths.BULLET_SPECIAL, Texture.class);
+
+    public static final AssetDescriptor<Texture> BULLET_MUMMY =
+        new AssetDescriptor<>(AssetPaths.BULLET_MUMMY, Texture.class);
     // ===== UI =====
     public static final AssetDescriptor<Texture> UI_LEFT =
         new AssetDescriptor<>(AssetPaths.UI_LEFT, Texture.class);
@@ -100,6 +108,11 @@ public class Assets {
         new AssetDescriptor<>(AssetPaths.SOLDIER_HURT, Texture.class);
     public static final AssetDescriptor<Texture> SOLDIER_DEAD =
         new AssetDescriptor<>(AssetPaths.SOLDIER_DEAD, Texture.class);
+    public static final AssetDescriptor<Texture> SCREEN_GAMEOVER_BG =
+        new AssetDescriptor<>(AssetPaths.SCREEN_GAMEOVER_BG, Texture.class);
+
+    public static final AssetDescriptor<Texture> SCREEN_VICTORY_BG =
+        new AssetDescriptor<>(AssetPaths.SCREEN_VICTORY_BG, Texture.class);
 
     // ===== TANK =====
     public static final AssetDescriptor<Texture> TANK_IDLE =
@@ -205,6 +218,8 @@ public class Assets {
         manager.load(NEAR);
         manager.load(SPHINX_PYRAMID);
         manager.load(ENTRANCE_PYRAMID);
+        manager.load(SCREEN_GAMEOVER_BG);
+        manager.load(SCREEN_VICTORY_BG);
 
         // ✅ Credits
         manager.load(SCREEN_CREDITS_BG);
@@ -212,7 +227,7 @@ public class Assets {
         manager.load(SCREEN_ACHIEVEMENTS_BG);
         manager.load(SCREEN_HOWTOPLAY_BG);
 
-
+        manager.load(TREASURE);
 
         // Ayla
         manager.load(AYLA_RUN);
@@ -221,6 +236,8 @@ public class Assets {
 
         // Projectiles
         manager.load(BULLET);
+        manager.load(BULLET_SPECIAL);
+        manager.load(BULLET_MUMMY);
 
         // UI
         manager.load(UI_LEFT);
@@ -331,6 +348,8 @@ public class Assets {
         setLinear(SPHINX_PYRAMID);
         setLinear(ENTRANCE_PYRAMID);
 
+        setLinear(TREASURE);
+
         // ✅ Credits
         setLinear(SCREEN_CREDITS_BG);
         setLinear(SCREEN_OPTIONS_BG);
@@ -340,8 +359,12 @@ public class Assets {
         setLinear(AYLA_RUN);
         setLinear(AYLA_IDLE);
         setLinear(AYLA_JUMP);
+        setLinear(SCREEN_GAMEOVER_BG);
+        setLinear(SCREEN_VICTORY_BG);
 
         setLinear(BULLET);
+        setLinear(BULLET_SPECIAL);
+        setLinear(BULLET_MUMMY);
 
         setLinear(UI_LEFT);
         setLinear(UI_RIGHT);

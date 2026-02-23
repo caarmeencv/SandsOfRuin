@@ -30,6 +30,8 @@ public final class AssetPaths {
 
     // Proyectiles
     public static final String BULLET = "projectiles/bullet.png";
+    public static final String BULLET_SPECIAL = "projectiles/bullet_special.png";
+    public static final String BULLET_MUMMY = "projectiles/bullet_mummy.png";
 
     // Imagenes de los controles
     public static final String UI_LEFT    = "ui/controls/btn_move_left.png";
@@ -66,6 +68,18 @@ public final class AssetPaths {
     public static final String TANK_MOVE    = "enemies/tank/tank_move.png";
     public static final String TANK_DESTROY = "enemies/tank/tank_destroy.png";
     public static final String TANK_DEAD    = "enemies/tank/tank_dead.png";
+    // ===== TREASURE =====
+// ⚠️ Pon aquí LA RUTA REAL de tu PNG
+    public static final String TREASURE = "backgrounds/pyramid/pyramid_treasure.png";
+
+    // Game Over
+    public static final String SCREEN_GAMEOVER_BG =
+        "screens/GameOver/gameover_background.png";
+
+    // Victory
+    public static final String SCREEN_VICTORY_BG =
+        "screens/Victory/victory_background.png";
+
 
     // ===================== AUDIO =====================
 

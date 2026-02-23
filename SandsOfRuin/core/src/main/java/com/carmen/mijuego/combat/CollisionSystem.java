@@ -46,7 +46,6 @@ public class CollisionSystem {
         ======================================== */
         if (cooldown <= 0f) {
             for (Tank t : tanks) {
-                // ✅ no colisiona si está en destroy/dead/gone
                 if (t.isDead() || t.isDestroying() || t.isGone()) continue;
 
                 if (aylaBounds.overlaps(t.getBounds())) {
@@ -61,7 +60,6 @@ public class CollisionSystem {
         ======================================== */
         if (cooldown <= 0f) {
             for (Soldier s : soldiers) {
-                // aunque esté dead/gone, sus balas pueden existir un instante, está bien.
                 Array<Bullet> bullets = s.getBullets();
 
                 for (int i = bullets.size - 1; i >= 0; i--) {
@@ -92,7 +90,7 @@ public class CollisionSystem {
         }
 
         /* =======================================
-           5) BALAS AYLA -> SOLDIERS
+           5) BALAS AYLA -> SOLDIERS (✅ daño)
         ======================================== */
         Array<Bullet> aylaBullets = ayla.getBullets();
 
@@ -101,31 +99,39 @@ public class CollisionSystem {
             if (!ab.isAlive()) continue;
 
             for (Soldier s : soldiers) {
-                // ✅ no pegar a muertos/gone (y en hurt ya no hay hitbox, pero esto lo refuerza)
                 if (s.isDead() || s.isGone()) continue;
 
                 if (ab.getBounds().overlaps(s.getBounds())) {
                     ab.kill();
-                    s.hitByAylaBullet();
+
+                    int dmg = ab.getDamage();
+                    for (int d = 0; d < dmg; d++) {
+                        s.hitByAylaBullet();
+                        if (s.isDead() || s.isGone()) break;
+                    }
                     break;
                 }
             }
         }
 
         /* =======================================
-           6) BALAS AYLA -> TANKS
+           6) BALAS AYLA -> TANKS (✅ daño)
         ======================================== */
         for (int i = aylaBullets.size - 1; i >= 0; i--) {
             Bullet ab = aylaBullets.get(i);
             if (!ab.isAlive()) continue;
 
             for (Tank t : tanks) {
-                // ✅ no pegar a dead/destroy/gone
                 if (t.isDead() || t.isDestroying() || t.isGone()) continue;
 
                 if (ab.getBounds().overlaps(t.getBounds())) {
                     ab.kill();
-                    t.hitByAylaBullet();
+
+                    int dmg = ab.getDamage();
+                    for (int d = 0; d < dmg; d++) {
+                        t.hitByAylaBullet();
+                        if (t.isDead() || t.isDestroying() || t.isGone()) break;
+                    }
                     break;
                 }
             }
