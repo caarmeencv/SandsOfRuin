@@ -23,6 +23,21 @@ public class Assets {
         new AssetDescriptor<>(AssetPaths.BG_DESERT_MID, Texture.class);
     public static final AssetDescriptor<Texture> NEAR =
         new AssetDescriptor<>(AssetPaths.BG_DESERT_NEAR, Texture.class);
+    // ===== PAUSE SCREEN =====
+    public static final AssetDescriptor<Texture> SCREEN_PAUSE_BG_DESERT =
+        new AssetDescriptor<>(AssetPaths.PAUSE_BG_DESERT, Texture.class);
+
+    public static final AssetDescriptor<Texture> SCREEN_PAUSE_BG_PYRAMID =
+        new AssetDescriptor<>(AssetPaths.PAUSE_BG_PYRAMID, Texture.class);
+
+    public static final AssetDescriptor<Texture> SCREEN_PAUSE_BTN_CONTINUE =
+        new AssetDescriptor<>(AssetPaths.PAUSE_BTN_CONTINUE, Texture.class);
+
+    public static final AssetDescriptor<Texture> SCREEN_PAUSE_BTN_MENU =
+        new AssetDescriptor<>(AssetPaths.PAUSE_BTN_MENU, Texture.class);
+
+    public static final AssetDescriptor<Texture> SCREEN_PAUSE_BTN_RESET =
+        new AssetDescriptor<>(AssetPaths.PAUSE_BTN_RESET, Texture.class);
 
     // ===== DECOR FINAL DESIERTO =====
     public static final AssetDescriptor<Texture> SPHINX_PYRAMID =
@@ -78,6 +93,8 @@ public class Assets {
     // ===== HUD =====
     public static final AssetDescriptor<Texture> HUD_HEART_FULL =
         new AssetDescriptor<>(AssetPaths.HUD_HEART_FULL, Texture.class);
+    public static final AssetDescriptor<Texture> HUD_HEART_EMPTY =
+        new AssetDescriptor<>(AssetPaths.HUD_HEART_FULL, Texture.class);
 
     // ===== SCREENS =====
     public static final AssetDescriptor<Texture> SCREEN_INTRO =
@@ -93,6 +110,21 @@ public class Assets {
         new AssetDescriptor<>(AssetPaths.SCREEN_MENU_BTN_CREDITS, Texture.class);
     public static final AssetDescriptor<Texture> SCREEN_MENU_BTN_ACHIEVEMENTS =
         new AssetDescriptor<>(AssetPaths.SCREEN_MENU_BTN_ACHIEVEMENTS, Texture.class);
+
+    public static final AssetDescriptor<Sound> SFX_AYLA_JUMP =
+        new AssetDescriptor<>(AssetPaths.SFX_AYLA_JUMP, Sound.class);
+
+    public static final AssetDescriptor<Sound> SFX_BUTTON_CLICKED =
+        new AssetDescriptor<>(AssetPaths.SFX_BUTTON_CLICKED, Sound.class);
+
+    public static final AssetDescriptor<Sound> SFX_CHARACTER_RUN =
+        new AssetDescriptor<>(AssetPaths.SFX_CHARACTER_RUN, Sound.class);
+
+    public static final AssetDescriptor<Sound> SFX_LIVE =
+        new AssetDescriptor<>(AssetPaths.SFX_LIVE, Sound.class);
+
+    public static final AssetDescriptor<Sound> SFX_SOLDIER_DEAD =
+        new AssetDescriptor<>(AssetPaths.SFX_SOLDIER_DEAD, Sound.class);
 
     // ===== ENEMIES =====
     public static final AssetDescriptor<Texture> CACTUS_PINK =
@@ -149,30 +181,25 @@ public class Assets {
     // ===== SFX (Sound) =====
     public static final AssetDescriptor<Sound> SFX_AYLA_DAMAGE =
         new AssetDescriptor<>(AssetPaths.SFX_AYLA_DAMAGE, Sound.class);
+
+    public static final AssetDescriptor<Sound> SFX_GUN_RELOAD =
+        new AssetDescriptor<>(AssetPaths.SFX_GUN_RELOAD, Sound.class);
     public static final AssetDescriptor<Sound> SFX_EXPLOSION_GRENADE =
         new AssetDescriptor<>(AssetPaths.SFX_EXPLOSION_GRENADE, Sound.class);
     public static final AssetDescriptor<Sound> SFX_EXPLOSION_TANK =
         new AssetDescriptor<>(AssetPaths.SFX_EXPLOSION_TANK, Sound.class);
     public static final AssetDescriptor<Sound> SFX_GAME_OVER =
         new AssetDescriptor<>(AssetPaths.SFX_GAME_OVER, Sound.class);
-    public static final AssetDescriptor<Sound> SFX_GRENADE_TAPE =
-        new AssetDescriptor<>(AssetPaths.SFX_GRENADE_TAPE, Sound.class);
     public static final AssetDescriptor<Sound> SFX_MUMMY_DEAD =
         new AssetDescriptor<>(AssetPaths.SFX_MUMMY_DEAD, Sound.class);
     public static final AssetDescriptor<Sound> SFX_MUMMY_GRUNTS =
         new AssetDescriptor<>(AssetPaths.SFX_MUMMY_GRUNTS, Sound.class);
     public static final AssetDescriptor<Sound> SFX_MUMMY_SHOTS =
         new AssetDescriptor<>(AssetPaths.SFX_MUMMY_SHOTS, Sound.class);
-    public static final AssetDescriptor<Sound> SFX_PYRAMID_STEPS =
-        new AssetDescriptor<>(AssetPaths.SFX_PYRAMID_STEPS, Sound.class);
-    public static final AssetDescriptor<Sound> SFX_SAND_WALK =
-        new AssetDescriptor<>(AssetPaths.SFX_SAND_WALK, Sound.class);
     public static final AssetDescriptor<Sound> SFX_SHOT_GUN_1 =
         new AssetDescriptor<>(AssetPaths.SFX_SHOT_GUN_1, Sound.class);
     public static final AssetDescriptor<Sound> SFX_SHOT_GUN_2 =
         new AssetDescriptor<>(AssetPaths.SFX_SHOT_GUN_2, Sound.class);
-    public static final AssetDescriptor<Sound> SFX_SHOT_TANK =
-        new AssetDescriptor<>(AssetPaths.SFX_SHOT_TANK, Sound.class);
     public static final AssetDescriptor<Sound> SFX_SOLDIER_DAMAGE =
         new AssetDescriptor<>(AssetPaths.SFX_SOLDIER_DAMAGE, Sound.class);
     public static final AssetDescriptor<Sound> SFX_TANK_MOVE =
@@ -221,6 +248,19 @@ public class Assets {
         manager.load(SCREEN_GAMEOVER_BG);
         manager.load(SCREEN_VICTORY_BG);
 
+        manager.load(SFX_AYLA_JUMP);
+        manager.load(SFX_BUTTON_CLICKED);
+        manager.load(SFX_CHARACTER_RUN);
+        manager.load(SFX_LIVE);
+        manager.load(SFX_SOLDIER_DEAD);
+
+        // Pause Screen
+        manager.load(SCREEN_PAUSE_BG_DESERT);
+        manager.load(SCREEN_PAUSE_BG_PYRAMID);
+        manager.load(SCREEN_PAUSE_BTN_CONTINUE);
+        manager.load(SCREEN_PAUSE_BTN_MENU);
+        manager.load(SCREEN_PAUSE_BTN_RESET);
+
         // ✅ Credits
         manager.load(SCREEN_CREDITS_BG);
         manager.load(SCREEN_OPTIONS_BG);
@@ -249,6 +289,7 @@ public class Assets {
 
         // HUD
         manager.load(HUD_HEART_FULL);
+        manager.load(HUD_HEART_EMPTY);
 
         // Screens
         manager.load(SCREEN_INTRO);
@@ -261,6 +302,8 @@ public class Assets {
         // Enemies
         manager.load(CACTUS_PINK);
         manager.load(CACTUS_YELLOW);
+
+        manager.load(SFX_GUN_RELOAD);
 
         manager.load(SOLDIER_IDLE);
         manager.load(SOLDIER_RUN);
@@ -288,15 +331,11 @@ public class Assets {
         manager.load(SFX_EXPLOSION_GRENADE);
         manager.load(SFX_EXPLOSION_TANK);
         manager.load(SFX_GAME_OVER);
-        manager.load(SFX_GRENADE_TAPE);
         manager.load(SFX_MUMMY_DEAD);
         manager.load(SFX_MUMMY_GRUNTS);
         manager.load(SFX_MUMMY_SHOTS);
-        manager.load(SFX_PYRAMID_STEPS);
-        manager.load(SFX_SAND_WALK);
         manager.load(SFX_SHOT_GUN_1);
         manager.load(SFX_SHOT_GUN_2);
-        manager.load(SFX_SHOT_TANK);
         manager.load(SFX_SOLDIER_DAMAGE);
         manager.load(SFX_TANK_MOVE);
         manager.load(SFX_VICTORY);
@@ -374,6 +413,7 @@ public class Assets {
         setLinear(UI_PAUSE);
 
         setLinear(HUD_HEART_FULL);
+        setLinear(HUD_HEART_EMPTY);
 
         setLinear(SCREEN_INTRO);
         setLinear(SCREEN_MENU_BG);
@@ -404,6 +444,13 @@ public class Assets {
         setLinear(MUMMY_WALK);
         setLinear(MUMMY_HURT);
         setLinear(MUMMY_DEAD);
+
+        // Pause Screen
+        setLinear(SCREEN_PAUSE_BG_DESERT);
+        setLinear(SCREEN_PAUSE_BG_PYRAMID);
+        setLinear(SCREEN_PAUSE_BTN_CONTINUE);
+        setLinear(SCREEN_PAUSE_BTN_MENU);
+        setLinear(SCREEN_PAUSE_BTN_RESET);
     }
 
     private void setLinear(AssetDescriptor<Texture> desc) {

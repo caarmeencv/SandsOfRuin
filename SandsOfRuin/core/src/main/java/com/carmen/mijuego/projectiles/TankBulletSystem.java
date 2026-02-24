@@ -3,11 +3,14 @@ package com.carmen.mijuego.projectiles;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
+
+import com.carmen.mijuego.assets.Assets;
+import com.carmen.mijuego.audio.AudioManager;
 import com.carmen.mijuego.enemies.Tank;
 
 /**
  * Sistema de balas del tanque:
- * - decide cuándo disparan los tanques (t.canShoot(delta))
+ * - decide cuándo disparan los tanques
  * - crea balas
  * - actualiza y elimina fuera/kill
  * - dibuja
@@ -19,13 +22,16 @@ public class TankBulletSystem {
     private static final float TANK_BULLET_H = 45f;
     private static final float TANK_BULLET_SPEED = 700f;
 
-    // altura del cañón (ajusta si lo ves alto/bajo)
-    private static final float TANK_MUZZLE_Y = 200f;
+    // Ajustes del "muzzle"
+    private static final float TANK_MUZZLE_Y = 200f;      // altura del cañón
+    private static final float TANK_MUZZLE_INSET_X = 70f; // spawn dentro del sprite
 
+    private final AudioManager audio;          // ✅ NUEVO
     private final Texture bulletTexture;
     private final Array<Bullet> bullets = new Array<>();
 
-    public TankBulletSystem(Texture bulletTexture) {
+    public TankBulletSystem(AudioManager audio, Texture bulletTexture) {
+        this.audio = audio;
         this.bulletTexture = bulletTexture;
     }
 
@@ -35,29 +41,35 @@ public class TankBulletSystem {
         for (int i = 0; i < tanks.size; i++) {
             Tank t = tanks.get(i);
 
-            if (t.canShoot(delta)) {
+            // seguridad por si el tank ya está muerto/gone
+            if (t.isDead() || t.isDestroying() || t.isGone()) continue;
 
-                boolean right = t.isFacingRight();
+            // SOLO dispara si está parado (idle)
+            if (!t.canShoot(delta)) continue;
 
-                // ✅ Spawn desde el "morro" del tanque según dirección
-                float muzzleX = right
-                    ? (t.getX() + t.getWidth())
-                    : (t.getX() - TANK_BULLET_W);
+            // ✅ SONIDO disparo tanque
+            if (audio != null) audio.playSfx(Assets.SFX_EXPLOSION_GRENADE);
 
-                float muzzleY = t.getY() + TANK_MUZZLE_Y;
+            boolean right = t.isFacingRight();
 
-                // ✅ Velocidad correcta: derecha +, izquierda -
-                float velX = right ? TANK_BULLET_SPEED : -TANK_BULLET_SPEED;
-
-                bullets.add(new Bullet(
-                    bulletTexture,
-                    muzzleX,
-                    muzzleY,
-                    velX,
-                    TANK_BULLET_W,
-                    TANK_BULLET_H
-                ));
+            float muzzleX;
+            if (right) {
+                muzzleX = (t.getX() + t.getWidth()) - TANK_MUZZLE_INSET_X;
+            } else {
+                muzzleX = t.getX() + TANK_MUZZLE_INSET_X - TANK_BULLET_W;
             }
+
+            float muzzleY = t.getY() + TANK_MUZZLE_Y;
+            float velX = right ? TANK_BULLET_SPEED : -TANK_BULLET_SPEED;
+
+            bullets.add(new Bullet(
+                bulletTexture,
+                muzzleX,
+                muzzleY,
+                velX,
+                TANK_BULLET_W,
+                TANK_BULLET_H
+            ));
         }
 
         // ================= UPDATE + LIMPIEZA =================
@@ -83,7 +95,6 @@ public class TankBulletSystem {
         return bullets;
     }
 
-    // ✅ AÑADIDO: limpiar todas las balas (para fase 5 / cutscene)
     public void clear() {
         bullets.clear();
     }

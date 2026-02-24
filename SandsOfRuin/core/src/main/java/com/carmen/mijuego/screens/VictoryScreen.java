@@ -29,6 +29,8 @@ public class VictoryScreen implements Screen {
     private BitmapFont font;
     private GlyphLayout layout;
 
+    private boolean clickedOnce = false;
+
     public VictoryScreen(Main game) {
         this.game = game;
 
@@ -48,31 +50,37 @@ public class VictoryScreen implements Screen {
     }
 
     @Override
+    public void show() {
+        // Música de victoria
+        game.audio.playMusic(Assets.MUS_VICTORY_THEME, true);
+    }
+
+    @Override
     public void render(float delta) {
 
-        // Input (móvil + PC)
         if (Gdx.input.justTouched() || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            if (!clickedOnce) {
+                clickedOnce = true;
+                game.audio.playSfx(Assets.SFX_BUTTON_CLICKED);
+            }
             game.setScreen(new MenuScreen(game));
             return;
         }
 
         ScreenUtils.clear(0, 0, 0, 1);
 
-        // ✅ Usar la cámara/viewport de ESTA pantalla
         camera.update();
         game.batch.setProjectionMatrix(camera.combined);
 
         game.batch.begin();
 
-        // ✅ Fondo ocupa TODO el mundo 1280x720
         game.batch.draw(background, 0, 0, WORLD_W, WORLD_H);
 
-        // Texto abajo centrado
         String text = "Toca para volver al menu\nPulsa ESC para volver al menu";
         layout.setText(font, text);
 
         float x = (WORLD_W - layout.width) / 2f;
-        float y = 100f; // altura desde abajo
+        float y = 100f;
 
         font.draw(game.batch, layout, x, y);
 
@@ -84,11 +92,6 @@ public class VictoryScreen implements Screen {
         viewport.update(width, height, true);
     }
 
-    @Override public void show() {
-
-        game.audio.playMusic(Assets.MUS_VICTORY_THEME, true);
-
-    }
     @Override public void pause() {}
     @Override public void resume() {}
     @Override public void hide() {}

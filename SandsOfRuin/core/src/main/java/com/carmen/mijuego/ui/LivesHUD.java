@@ -5,37 +5,63 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class LivesHUD {
 
-    private final Texture heart;
+    private final Texture heartFull;
+    private final Texture heartEmpty;
 
-    // Siempre 5 (por ahora)
-    private static final int HEARTS = 5;
+    private final int maxHearts;
 
-    // Tamaño y separación
     private final float heartSize;
     private final float spacing;
 
-    // Posición (márgenes desde la esquina superior izquierda)
     private final float offsetX;
     private final float offsetY;
 
-    public LivesHUD(Texture heart) {
-        this(heart, 42f, 10f, 18f, 18f);
+    public LivesHUD(Texture heartFull, Texture heartEmpty) {
+        this(heartFull, heartEmpty, 5, 42f, 10f, 18f, 18f);
     }
 
-    public LivesHUD(Texture heart, float heartSize, float spacing, float offsetX, float offsetY) {
-        this.heart = heart;
+    public LivesHUD(Texture heartFull, Texture heartEmpty,
+                    int maxHearts, float heartSize, float spacing,
+                    float offsetX, float offsetY) {
+
+        this.heartFull = heartFull;
+        this.heartEmpty = heartEmpty;
+        this.maxHearts = maxHearts;
+
         this.heartSize = heartSize;
         this.spacing = spacing;
         this.offsetX = offsetX;
         this.offsetY = offsetY;
     }
 
-    public void draw(SpriteBatch batch, float camLeft, float camTop) {
+    // ✅ NUEVO: draw con flag
+    public void draw(SpriteBatch batch, float camLeft, float camTop, int currentLives, boolean visible) {
+        if (!visible) return;
+
         float y = camTop - offsetY - heartSize;
 
-        for (int i = 0; i < HEARTS; i++) {
+        float pr = batch.getColor().r;
+        float pg = batch.getColor().g;
+        float pb = batch.getColor().b;
+        float pa = batch.getColor().a;
+
+        for (int i = 0; i < maxHearts; i++) {
             float x = camLeft + offsetX + i * (heartSize + spacing);
-            batch.draw(heart, x, y, heartSize, heartSize);
+
+            if (i < currentLives) {
+                batch.setColor(1, 1, 1, 1f);
+                batch.draw(heartFull, x, y, heartSize, heartSize);
+            } else {
+                batch.setColor(1, 1, 1, 0.25f);
+                batch.draw(heartEmpty, x, y, heartSize, heartSize);
+            }
         }
+
+        batch.setColor(pr, pg, pb, pa);
+    }
+
+    // ✅ Mantengo tu método antiguo para no romper código
+    public void draw(SpriteBatch batch, float camLeft, float camTop, int currentLives) {
+        draw(batch, camLeft, camTop, currentLives, true);
     }
 }

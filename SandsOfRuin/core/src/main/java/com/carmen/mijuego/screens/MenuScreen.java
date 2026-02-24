@@ -191,7 +191,8 @@ public class MenuScreen implements Screen {
         if (Gdx.input.justTouched()) {
 
             if (hoverGame) {
-                game.setScreen(new PyramidScreen(game));
+                game.resetRun();
+                game.setScreen(new DesertScreen(game));
                 return;
             }
 

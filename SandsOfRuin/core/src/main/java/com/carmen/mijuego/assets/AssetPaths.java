@@ -43,6 +43,7 @@ public final class AssetPaths {
 
     // HUD
     public static final String HUD_HEART_FULL = "ui/hud/heart_full.png";
+    public static final String HUD_HEART_EMPTY = "ui/hud/heart_empty.png";
 
     // Pantallas
     public static final String SCREEN_INTRO = "screens/intro/IntroScreen.png";
@@ -88,15 +89,11 @@ public final class AssetPaths {
     public static final String SFX_EXPLOSION_GRENADE = "audio/effects/ExplosionGrenade.mp3";
     public static final String SFX_EXPLOSION_TANK    = "audio/effects/ExplosionTank.mp3";
     public static final String SFX_GAME_OVER         = "audio/effects/GameOver.mp3";
-    public static final String SFX_GRENADE_TAPE      = "audio/effects/GrenadeTape.mp3";
     public static final String SFX_MUMMY_DEAD        = "audio/effects/MummyDead.mp3";
     public static final String SFX_MUMMY_GRUNTS      = "audio/effects/MummyGrunts.mp3";
     public static final String SFX_MUMMY_SHOTS       = "audio/effects/MummyShots.mp3";
-    public static final String SFX_PYRAMID_STEPS     = "audio/effects/PyramidSteps.mp3";
-    public static final String SFX_SAND_WALK         = "audio/effects/SandWalk.mp3";
     public static final String SFX_SHOT_GUN_1        = "audio/effects/ShotGun.mp3";
     public static final String SFX_SHOT_GUN_2        = "audio/effects/ShotGun2.mp3";
-    public static final String SFX_SHOT_TANK         = "audio/effects/ShotTank.mp3";
     public static final String SFX_SOLDIER_DAMAGE    = "audio/effects/SoldierDamage.mp3";
     public static final String SFX_TANK_MOVE         = "audio/effects/TankMove.mp3";
     public static final String SFX_VICTORY           = "audio/effects/Victory.mp3";
@@ -122,4 +119,21 @@ public final class AssetPaths {
     public static final String MUMMY_WALK = "enemies/mummy/mummy_walk.png"; // spritesheet 410x608
     public static final String MUMMY_HURT = "enemies/mummy/mummy_hurt.png"; // spritesheet 410x608
     public static final String MUMMY_DEAD = "enemies/mummy/mummy_dead.png";
+
+    // ===================== PAUSE SCREEN =====================
+
+    // ===================== PAUSE SCREEN =====================
+    public static final String PAUSE_BG_DESERT   = "screens/pause/pausedesert_background.png";
+    public static final String PAUSE_BG_PYRAMID  = "screens/pause/pausepyramid_background.png";
+
+    public static final String PAUSE_BTN_CONTINUE = "screens/pause/ContinueButton.png";
+    public static final String PAUSE_BTN_MENU     = "screens/pause/MenuButton.png";
+    public static final String PAUSE_BTN_RESET    = "screens/pause/ResetButton.png";
+
+    public static final String SFX_AYLA_JUMP      = "audio/effects/AylaJump.mp3";
+    public static final String SFX_BUTTON_CLICKED = "audio/effects/ButtonClicked.mp3";
+    public static final String SFX_CHARACTER_RUN  = "audio/effects/CharacterRun.mp3";
+    public static final String SFX_LIVE           = "audio/effects/Live.mp3";
+    public static final String SFX_SOLDIER_DEAD   = "audio/effects/SoldierDead.mp3";
+    public static final String SFX_GUN_RELOAD = "audio/effects/ReloadGun.mp3";
 }

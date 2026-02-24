@@ -19,54 +19,54 @@ import com.carmen.mijuego.input.Controls;
 import com.carmen.mijuego.projectiles.Bullet;
 import com.carmen.mijuego.projectiles.MummyBulletSystem;
 import com.carmen.mijuego.ui.CurseParticles;
+import com.carmen.mijuego.ui.LivesHUD;
 import com.carmen.mijuego.world.ParallaxPyramid;
 
 public class PyramidScreen implements Screen {
 
+    private boolean snapCameraOnResume = false;
+    private float resumeImmunity = 0f;
+    private static final float RESUME_IMMUNITY_TIME = 2.0f;
     private static final float WORLD_W = 1280f;
     private static final float WORLD_H = 720f;
 
     private static final float GROUND_Y = 90f;
 
-    // ===== INTRO =====
     private static final float INTRO_START_X = -260f;
     private static final float INTRO_TARGET_X = 220f;
     private static final float INTRO_WALK_SPEED = 280f;
 
-    // ===== PLAY SCROLL =====
     private static final float SCROLL_SPEED_FORWARD = 320f;
     private static final float SCROLL_SPEED_BACK    = 260f;
 
-    // ===== BOSS SPAWN =====
+    private static final float KNOCKBACK_DISTANCE = 140f;
+    private static final float KNOCKBACK_SPEED    = 900f;
+    private float knockRemaining = 0f;
+
+    private static final float MUMMY_HIT_DELAY = 0.55f;
+    private float mummyHitCooldown = 0f;
+
     private static final float BOSS_SPAWN_AFTER_SCROLL = 650f;
     private static final float MUMMY_SPAWN_OUTSIDE_PAD = 220f;
 
-    // ✅ Ayla anda MÁS tras matar (para dejar la momia atrás)
     private static final float AFTER_BOSS_DISTANCE = 700f;
     private static final float AFTER_BOSS_SPEED    = 240f;
 
-    // ===== TREASURE (mundo) =====
     private static final float TREASURE_WORLD_X = 3050f;
-
-    private static final float TREASURE_W = 380f;
-    private static final float TREASURE_H = 380f;
-
-    private static final float TREASURE_Y_OFFSET = -75f;
-
+    private static final float TREASURE_W = 220f;
+    private static final float TREASURE_H = 220f;
+    private static final float TREASURE_Y_OFFSET = -25f;
     private static final float TREASURE_REVEAL_PAD = 20f;
 
-    // ===== AUTO hacia el cofre (antes del lock) =====
     private static final float AUTO_SCROLL_SPEED = 320f;
-
-    // ===== CAMINAR HACIA EL COFRE CON CÁMARA FIJA =====
     private static final float AYLA_TO_CHEST_SPEED = 240f;
 
-    // ===== DESPAWN MOMIA SUAVE =====
     private static final float MUMMY_VISUAL_W_EST = 320f;
     private static final float OFFSCREEN_MARGIN = 30f;
 
-    // ✅ maldición
     private static final float CURSE_TIME = 4.0f;
+
+    private boolean pauseLatch = false;
 
     private enum Phase {
         INTRO_ENTER,
@@ -87,28 +87,27 @@ public class PyramidScreen implements Screen {
 
     private ParallaxPyramid parallax;
 
-    // Boss
     private Texture mummyIdle, mummyWalk, mummyHurt, mummyDead;
     private Mummy mummy;
     private boolean mummySpawned = false;
 
-    // ✅ Balas momia
     private MummyBulletSystem mummyBullets;
-
-    // ✅ Partículas maldición
     private CurseParticles curseParticles;
 
-    // Treasure
+    private LivesHUD livesHUD;
+
     private Texture treasureTex;
     private final Rectangle treasureBounds = new Rectangle();
 
-    // Mundo
     private float scrollX = 0f;
     private float playStartScrollX = 0f;
     private float afterBossStartScrollX = 0f;
 
-    // lock cámara
     private float lockedCamX = 0f;
+
+    private float dizzyTime = 0f;
+    private float baseCamY;
+    private float baseZoom;
 
     public PyramidScreen(Main game) {
         this.game = game;
@@ -120,8 +119,11 @@ public class PyramidScreen implements Screen {
         camera.position.set(WORLD_W / 2f, WORLD_H / 2f, 0f);
         camera.update();
 
-        // Ayla
+        baseCamY = camera.position.y;
+        baseZoom = camera.zoom;
+
         ayla = new Ayla(
+            game.audio, // ✅ AÑADIR
             game.assets.get(Assets.AYLA_RUN),
             game.assets.get(Assets.AYLA_IDLE),
             game.assets.get(Assets.AYLA_JUMP),
@@ -131,50 +133,94 @@ public class PyramidScreen implements Screen {
             GROUND_Y
         );
 
-        // Controls
-        controls = new Controls(
-            viewport,
+        ayla.setLives(game.vidas);
+
+        controls = new Controls(game.audio, viewport,
             game.assets.get(Assets.UI_LEFT),
             game.assets.get(Assets.UI_RIGHT),
             game.assets.get(Assets.UI_JUMP),
             game.assets.get(Assets.UI_SHOOT),
             game.assets.get(Assets.UI_GRENADE),
-            game.assets.get(Assets.UI_PAUSE)
-        );
+            game.assets.get(Assets.UI_PAUSE));
         Gdx.input.setInputProcessor(controls);
         controls.updateLayout(camera, viewport);
 
-        // Parallax
         Texture wallTex   = game.assets.get(Assets.PYR_WALL);
         Texture groundTex = game.assets.get(Assets.PYR_GROUND);
         parallax = new ParallaxPyramid(wallTex, groundTex, 0.75f, 0.90f);
 
-        // Mummy
         mummyIdle = game.assets.get(Assets.MUMMY_IDLE);
         mummyWalk = game.assets.get(Assets.MUMMY_WALK);
         mummyHurt = game.assets.get(Assets.MUMMY_HURT);
         mummyDead = game.assets.get(Assets.MUMMY_DEAD);
 
-        // Treasure
         treasureTex = game.assets.get(Assets.TREASURE);
         float ty = GROUND_Y + TREASURE_Y_OFFSET;
         treasureBounds.set(TREASURE_WORLD_X, ty, TREASURE_W, TREASURE_H);
 
-        // ✅ sistemas nuevos
-        mummyBullets = new MummyBulletSystem(game.assets.get(Assets.BULLET_MUMMY));
+        mummyBullets = new MummyBulletSystem(game.audio, game.assets.get(Assets.BULLET_MUMMY));
         curseParticles = new CurseParticles();
+
+        livesHUD = new LivesHUD(
+            game.assets.get(Assets.HUD_HEART_FULL),
+            game.assets.get(Assets.HUD_HEART_EMPTY)
+        );
     }
 
     @Override
     public void show() {
         game.audio.playMusic(Assets.MUS_PYRAMID_THEME, true);
+        Gdx.input.setInputProcessor(controls);
+        controls.resetAll();
+        pauseLatch = false;
     }
 
     @Override
     public void render(float delta) {
+
+        // ✅ inmunidad al reanudar (2s)
+        if (resumeImmunity > 0f) {
+            resumeImmunity -= delta;
+            if (resumeImmunity < 0f) resumeImmunity = 0f;
+        }
+
         ScreenUtils.clear(0, 0, 0, 1);
 
+        game.runTimeSeconds += delta;
+        controls.setCounterText(formatTime(game.runTimeSeconds));
+
+        // ===================== PAUSA =====================
+        boolean pauseKey = Gdx.input.isKeyPressed(Input.Keys.ESCAPE);
+        boolean pauseNow = pauseKey || controls.pausePressed;
+
+        if (pauseNow && !pauseLatch) {
+            pauseLatch = true;
+            controls.resetAll();
+
+            snapCameraOnResume = true;                 // ✅ snap al volver
+            resumeImmunity = RESUME_IMMUNITY_TIME;     // ✅ inmunidad 2s
+
+            ayla.stopAllLoops();
+            game.setScreen(new PauseScreen(game, this, PauseScreen.Context.PYRAMID));
+            return;
+        }
+        if (!pauseNow) pauseLatch = false;
+        // ================================================
+
         updateLogic(delta);
+
+        // ✅ SNAP real (si updateLogic ha dejado la cámara “a medio ir”)
+        if (snapCameraOnResume) {
+            float targetCamX = scrollX + viewport.getWorldWidth() / 2f;
+            camera.position.x = targetCamX;
+            camera.update();
+            snapCameraOnResume = false;
+        }
+
+        applyDizzyCamera(delta);
+
+        float camLeft = camera.position.x - viewport.getWorldWidth() / 2f;
+        float camTop  = camera.position.y + viewport.getWorldHeight() / 2f;
 
         game.batch.setProjectionMatrix(camera.combined);
         game.batch.begin();
@@ -185,19 +231,18 @@ public class PyramidScreen implements Screen {
 
         if (mummy != null) mummy.draw(game.batch);
 
-        // ✅ dibujar balas momia
         if (mummy != null && !mummy.isDead()) {
             mummyBullets.draw(game.batch);
         }
 
         ayla.draw(game.batch, computeMovingVisual());
 
-        // ✅ partículas (si hay maldición, se ven orbitando)
         float px = ayla.getX() + ayla.getWidth() * 0.50f;
         float py = ayla.getY() + ayla.getHeight() * 0.55f;
         curseParticles.draw(game.batch, px, py);
 
-        // Controles
+        livesHUD.draw(game.batch, camLeft, camTop, ayla.getLives(), phase == Phase.PLAY);
+
         if (phase == Phase.PLAY) {
             controls.updateLayout(camera, viewport);
             controls.draw(
@@ -208,6 +253,36 @@ public class PyramidScreen implements Screen {
         }
 
         game.batch.end();
+    }
+
+    private void applyDizzyCamera(float delta) {
+        if (ayla != null && ayla.isCursed()) {
+            dizzyTime += delta;
+
+            float rollDeg = 3.5f;
+            float swayX   = 10f;
+            float swayY   = 6f;
+            float zoomAmp = 0.02f;
+
+            float t1 = dizzyTime * 3.5f;
+            float t2 = dizzyTime * 6.0f;
+
+            camera.up.set(0, 1, 0);
+            camera.rotate((float) Math.sin(t1) * rollDeg);
+
+            camera.position.x += (float) Math.sin(t2) * swayX;
+            camera.position.y = baseCamY + (float) Math.cos(t2 * 0.9f) * swayY;
+
+            camera.zoom = baseZoom + (float) Math.sin(t1 * 1.2f) * zoomAmp;
+
+            camera.update();
+        } else {
+            dizzyTime = 0f;
+            camera.up.set(0, 1, 0);
+            camera.zoom = baseZoom;
+            camera.position.y = baseCamY;
+            camera.update();
+        }
     }
 
     private void drawTreasure() {
@@ -223,14 +298,12 @@ public class PyramidScreen implements Screen {
         float tx = TREASURE_WORLD_X;
         float ty = GROUND_Y + TREASURE_Y_OFFSET;
 
-        // invertido (mira izquierda)
-        game.batch.draw(treasureTex, tx + TREASURE_W, ty, -TREASURE_W, TREASURE_H);
+        game.batch.draw(treasureTex, tx, ty, TREASURE_W, TREASURE_H);
     }
 
     private void updateLogic(float delta) {
         float viewportW = viewport.getWorldWidth();
 
-        // Inputs
         boolean leftKey  = Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A);
         boolean rightKey = Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D);
 
@@ -251,9 +324,9 @@ public class PyramidScreen implements Screen {
 
         boolean grenade = grenadeKey || controls.grenadePressed;
 
-        // =========================
-        // INTRO (cámara fija)
-        // =========================
+        mummyHitCooldown -= delta;
+        if (mummyHitCooldown < 0f) mummyHitCooldown = 0f;
+
         if (phase == Phase.INTRO_ENTER) {
 
             scrollX = 0f;
@@ -277,38 +350,52 @@ public class PyramidScreen implements Screen {
                 playStartScrollX = scrollX;
             }
 
-            // partículas
             updateCurseParticles(delta);
             return;
         }
 
-        // =========================
-        // PLAY (jugador controla)
-        // =========================
         if (phase == Phase.PLAY) {
 
-            if (right) scrollX += SCROLL_SPEED_FORWARD * delta;
-            if (left)  scrollX -= SCROLL_SPEED_BACK * delta;
-            if (scrollX < 0f) scrollX = 0f;
-
-            float targetCamX = scrollX + viewportW / 2f;
-            camera.position.x += (targetCamX - camera.position.x) * 10f * delta;
-            camera.update();
-
-            float camLeft  = camera.position.x - viewportW / 2f;
-            float camRight = camera.position.x + viewportW / 2f;
-
-            // ✅ invertir controles si está maldita
             if (ayla.isCursed()) {
                 boolean tmp = left;
                 left = right;
                 right = tmp;
             }
 
+            if (knockRemaining > 0f) {
+                float step = KNOCKBACK_SPEED * delta;
+                if (step > knockRemaining) step = knockRemaining;
+
+                scrollX -= step;
+                if (scrollX < 0f) scrollX = 0f;
+
+                knockRemaining -= step;
+                if (knockRemaining < 0f) knockRemaining = 0f;
+            } else {
+                if (right) scrollX += SCROLL_SPEED_FORWARD * delta;
+                if (left)  scrollX -= SCROLL_SPEED_BACK * delta;
+                if (scrollX < 0f) scrollX = 0f;
+            }
+
+            float targetCamX = scrollX + viewportW / 2f;
+
+            if (snapCameraOnResume) {
+                camera.position.x = targetCamX; // ✅ PUM
+                camera.update();
+                // NO pongas snapCameraOnResume=false aquí, ya lo apago en render()
+            } else {
+                camera.position.x += (targetCamX - camera.position.x) * 10f * delta;
+                camera.update();
+            }
+
+            baseCamY = WORLD_H / 2f;
+
+            float camLeft  = camera.position.x - viewportW / 2f;
+            float camRight = camera.position.x + viewportW / 2f;
+
             ayla.setX(camLeft + INTRO_TARGET_X);
             ayla.update(delta, left, right, jump, shoot, grenade, GROUND_Y, camLeft, camRight);
 
-            // Spawn boss
             if (!mummySpawned && (scrollX - playStartScrollX) >= BOSS_SPAWN_AFTER_SCROLL) {
                 spawnMummyOutsideRight();
             }
@@ -316,19 +403,33 @@ public class PyramidScreen implements Screen {
             if (mummySpawned && mummy != null && !mummy.isDead()) {
                 mummy.update(delta, ayla.getX(), GROUND_Y);
 
-                // ✅ balas momia
                 mummyBullets.update(delta, camLeft, camRight, mummy);
 
-                // colisiones
                 handleAylaBulletsVsMummy();
                 handleMummyBulletsVsAyla();
+
+                handleAylaVsMummyBody();
+
+                game.vidas = ayla.getLives();
+
+                if (ayla.isDead()) {
+                    game.vidas = ayla.getLives();
+
+                    // ✅ SFX game over (solo una vez aquí)
+                    game.audio.playSfx(Assets.SFX_GAME_OVER);
+
+                    ayla.stopAllLoops();
+                    game.setScreen(new GameOverScreen(game));
+                    return;
+                }
             }
 
             if (mummySpawned && mummy != null && mummy.isDead()) {
+                ayla.clearCurse();
+                dizzyTime = 0f;
+
                 phase = Phase.AFTER_BOSS_WALK;
                 afterBossStartScrollX = scrollX;
-
-                // limpiar balas
                 mummyBullets.clear();
             }
 
@@ -336,9 +437,6 @@ public class PyramidScreen implements Screen {
             return;
         }
 
-        // =========================
-        // AFTER_BOSS_WALK
-        // =========================
         if (phase == Phase.AFTER_BOSS_WALK) {
 
             float targetScroll = afterBossStartScrollX + AFTER_BOSS_DISTANCE;
@@ -354,10 +452,10 @@ public class PyramidScreen implements Screen {
             camera.update();
 
             float camLeft  = camera.position.x - viewportW / 2f;
-            float camRight = camera.position.x + viewportW / 2f;
 
             ayla.setX(camLeft + INTRO_TARGET_X);
-            ayla.update(delta, false, true, false, false, false, GROUND_Y, camLeft, camRight);
+            ayla.update(delta, false, true, false, false, false, GROUND_Y, camLeft,
+                camera.position.x + viewportW / 2f);
 
             despawnMummyIfFullyOffscreenLeft(camLeft);
 
@@ -365,9 +463,6 @@ public class PyramidScreen implements Screen {
             return;
         }
 
-        // =========================
-        // TREASURE_APPROACH
-        // =========================
         if (phase == Phase.TREASURE_APPROACH) {
 
             scrollX += AUTO_SCROLL_SPEED * delta;
@@ -397,9 +492,6 @@ public class PyramidScreen implements Screen {
             return;
         }
 
-        // =========================
-        // TREASURE_LOCK
-        // =========================
         if (phase == Phase.TREASURE_LOCK) {
 
             camera.position.x = lockedCamX;
@@ -413,11 +505,17 @@ public class PyramidScreen implements Screen {
 
             if (ayla.getBounds().overlaps(treasureBounds)) {
                 phase = Phase.END;
+                game.vidas = ayla.getLives();
+
+                // ✅ SFX victoria (solo una vez aquí)
+                game.audio.playSfx(Assets.SFX_VICTORY);
+
+                ayla.stopAllLoops();
                 game.setScreen(new VictoryScreen(game));
+                return;
             }
 
             updateCurseParticles(delta);
-            return;
         }
     }
 
@@ -425,6 +523,23 @@ public class PyramidScreen implements Screen {
         float cx = ayla.getX() + ayla.getWidth() * 0.50f;
         float cy = ayla.getY() + ayla.getHeight() * 0.55f;
         curseParticles.update(delta, cx, cy, ayla.isCursed());
+    }
+
+    private void handleAylaVsMummyBody() {
+        if (mummy == null || mummy.isDead()) return;
+        if (mummyHitCooldown > 0f) return;
+        if (resumeImmunity > 0f) return; // ✅ no daño durante 2s
+        if (ayla.getBounds().overlaps(mummy.getBounds())) {
+            knockRemaining = KNOCKBACK_DISTANCE;
+
+            boolean damaged = ayla.takeDamage();
+            if (damaged) {
+                ayla.applyCurse(CURSE_TIME);
+            }
+
+            game.vidas = ayla.getLives();
+            mummyHitCooldown = MUMMY_HIT_DELAY;
+        }
     }
 
     private void handleMummyBulletsVsAyla() {
@@ -435,11 +550,19 @@ public class PyramidScreen implements Screen {
             Bullet b = bullets.get(i);
             if (!b.isAlive()) continue;
 
+            if (resumeImmunity > 0f) return; // ✅ no daño durante 2s
+
             if (b.getBounds().overlaps(ayla.getBounds())) {
                 b.kill();
 
-                // ✅ aplica maldición
-                ayla.applyCurse(CURSE_TIME);
+                knockRemaining = KNOCKBACK_DISTANCE;
+
+                boolean damaged = ayla.takeDamage();
+                if (damaged) {
+                    ayla.applyCurse(CURSE_TIME);
+                }
+
+                game.vidas = ayla.getLives();
             }
         }
     }
@@ -460,9 +583,7 @@ public class PyramidScreen implements Screen {
         float camRight = camera.position.x + viewportW / 2f;
 
         float mummyX = camRight + MUMMY_SPAWN_OUTSIDE_PAD;
-        mummy = new Mummy(mummyIdle, mummyWalk, mummyHurt, mummyDead, mummyX, GROUND_Y);
-        mummy.startFight();
-    }
+        mummy = new Mummy(game.audio, mummyIdle, mummyWalk, mummyHurt, mummyDead, mummyX, GROUND_Y);    }
 
     private void handleAylaBulletsVsMummy() {
         if (mummy == null || mummy.isDead()) return;
@@ -475,7 +596,6 @@ public class PyramidScreen implements Screen {
             if (b.getBounds().overlaps(mummy.getBounds())) {
                 b.kill();
 
-                // ✅ daño: normal 1 / especial 2
                 for (int d = 0; d < b.getDamage(); d++) {
                     mummy.hitByAylaBullet();
                 }
@@ -495,8 +615,14 @@ public class PyramidScreen implements Screen {
         boolean left  = leftKey  || controls.leftPressed;
         boolean right = rightKey || controls.rightPressed;
 
-        // (visual) si quieres que el “curse” afecte a animación, no hace falta
         return (left ^ right);
+    }
+
+    private String formatTime(float seconds) {
+        int total = (int) seconds;
+        int min = total / 60;
+        int sec = total % 60;
+        return String.format("%02d:%02d", min, sec);
     }
 
     @Override

@@ -6,8 +6,12 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
+import com.carmen.mijuego.assets.Assets;
+import com.carmen.mijuego.audio.AudioManager;
 
 public class Tank {
+
+    private final AudioManager audio;
 
     private enum State { MOVE, IDLE, DESTROY, DEAD, GONE }
 
@@ -59,12 +63,18 @@ public class Tank {
 
     private final Rectangle bounds = new Rectangle();
 
-    public Tank(Texture tankIdle,
+    // SFX continuo motor
+    private long moveLoopId = -1;
+
+    public Tank(AudioManager audio,
+                Texture tankIdle,
                 Texture tankMoveSheet,
                 Texture tankDestroySheet,
                 Texture tankDead,
                 float startX,
                 float startY) {
+
+        this.audio = audio;
 
         this.idleTex = tankIdle;
         this.deadTex = tankDead;
@@ -102,11 +112,13 @@ public class Tank {
         stateTime += delta;
 
         if (state == State.GONE) {
+            stopMoveLoop();
             return;
         }
 
         // DESTROY: cuando termina animación -> DEAD blink
         if (state == State.DESTROY) {
+            stopMoveLoop();
             if (destroyAnim.isAnimationFinished(stateTime)) {
                 enterDeadBlink();
             }
@@ -116,6 +128,7 @@ public class Tank {
 
         // DEAD: blink y luego GONE
         if (state == State.DEAD) {
+            stopMoveLoop();
             blinkTimer += delta;
             if (blinkTimer >= BLINK_INTERVAL) {
                 blinkTimer = 0f;
@@ -138,29 +151,55 @@ public class Tank {
 
         if (absDx <= STOP_DISTANCE) {
             state = State.IDLE;
+            stopMoveLoop();
         } else {
             state = State.MOVE;
             float dir = dx > 0 ? 1f : -1f;
             x += dir * MOVE_SPEED * delta;
+
+            // ✅ tanque avanza -> TankMove (loop)
+            startMoveLoop();
         }
 
         updateBounds();
+    }
+
+    private void startMoveLoop() {
+        if (moveLoopId == -1) {
+            moveLoopId = audio.loopSfx(Assets.SFX_TANK_MOVE, 0.35f);
+        }
+    }
+
+    private void stopMoveLoop() {
+        if (moveLoopId != -1) {
+            audio.stopLoop(Assets.SFX_TANK_MOVE, moveLoopId);
+            moveLoopId = -1;
+        }
     }
 
     /** Llamar 1 vez por frame. Si devuelve true, dispara (en TankBulletSystem). */
     public boolean canShoot(float delta) {
         if (state == State.DEAD || state == State.DESTROY || state == State.GONE) return false;
 
+        // ✅ SOLO DISPARA PARADO
+        if (state != State.IDLE) {
+            shootTimer = 0f;
+            return false;
+        }
+
         shootTimer += delta;
         if (shootTimer >= SHOOT_COOLDOWN) {
             shootTimer = 0f;
+
+            // ✅ tanque dispara -> ExplosionGrenade
+            audio.playSfx(Assets.SFX_EXPLOSION_GRENADE);
+
             return true;
         }
         return false;
     }
 
     public void hitByAylaBullet() {
-        // ✅ si ya está destruyéndose o muerto, NO reinicia animación
         if (state == State.DESTROY || state == State.DEAD || state == State.GONE) return;
 
         hitsTaken++;
@@ -168,7 +207,10 @@ public class Tank {
             state = State.DESTROY;
             stateTime = 0f;
 
-            // ✅ sin hitbox durante DESTROY (y luego tampoco)
+            // ✅ tanque muere -> ExplosionTank (al iniciar destrucción)
+            audio.playSfx(Assets.SFX_EXPLOSION_TANK);
+
+            // ✅ sin hitbox durante DESTROY
             bounds.set(0, 0, 0, 0);
         }
     }
@@ -181,7 +223,6 @@ public class Tank {
         blinkToggles = 0;
         visible = true;
 
-        // ✅ sin hitbox en DEAD
         bounds.set(0, 0, 0, 0);
     }
 
@@ -222,7 +263,6 @@ public class Tank {
     }
 
     private void updateBounds() {
-        // ✅ sin hitbox en DESTROY/DEAD/GONE
         if (state == State.DESTROY || state == State.DEAD || state == State.GONE) {
             bounds.set(0, 0, 0, 0);
             return;

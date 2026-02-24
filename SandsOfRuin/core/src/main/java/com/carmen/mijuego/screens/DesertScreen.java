@@ -31,6 +31,10 @@ import com.carmen.mijuego.combat.CollisionSystem;
 
 public class DesertScreen implements Screen {
 
+    private boolean snapCameraOnResume = false;
+    private float resumeImmunity = 0f;
+    private static final float RESUME_IMMUNITY_TIME = 2.0f;
+
     private static final float WORLD_W = 1280f;
     private static final float WORLD_H = 720f;
 
@@ -105,7 +109,7 @@ public class DesertScreen implements Screen {
     private ShapeRenderer shapeRenderer;
     private boolean debugHitboxes = true;
 
-    private float levelTimer = 0f;
+    // ❌ ELIMINADO: private float levelTimer = 0f;
     private boolean pauseLatch = false;
 
     private float hideEnemiesTimer = 0f;
@@ -130,26 +134,26 @@ public class DesertScreen implements Screen {
         sphinxTex   = game.assets.get(Assets.SPHINX_PYRAMID);
         entranceTex = game.assets.get(Assets.ENTRANCE_PYRAMID);
 
-        // ✅ Ayla ahora recibe bala normal + bala especial
         ayla = new Ayla(
+            game.audio, // ✅ AÑADIR
             game.assets.get(Assets.AYLA_RUN),
             game.assets.get(Assets.AYLA_IDLE),
             game.assets.get(Assets.AYLA_JUMP),
             game.assets.get(Assets.BULLET),
-            game.assets.get(Assets.BULLET_SPECIAL), // <-- asegúrate de que exista en Assets
+            game.assets.get(Assets.BULLET_SPECIAL),
             0f,
             GROUND_Y
         );
+        // ✅ IMPORTANTÍSIMO: trae vidas globales a esta Ayla
+        ayla.setLives(game.vidas);
 
-        controls = new Controls(
-            viewport,
+        controls = new Controls(game.audio, viewport,
             game.assets.get(Assets.UI_LEFT),
             game.assets.get(Assets.UI_RIGHT),
             game.assets.get(Assets.UI_JUMP),
             game.assets.get(Assets.UI_SHOOT),
             game.assets.get(Assets.UI_GRENADE),
-            game.assets.get(Assets.UI_PAUSE)
-        );
+            game.assets.get(Assets.UI_PAUSE));
         Gdx.input.setInputProcessor(controls);
         controls.updateLayout(camera, viewport);
 
@@ -174,7 +178,11 @@ public class DesertScreen implements Screen {
         );
         parallax.setSpeedMul(PARALLAX_MUL);
 
-        livesHUD = new LivesHUD(game.assets.get(Assets.HUD_HEART_FULL));
+        // ✅ HUD dinámico full/empty
+        livesHUD = new LivesHUD(
+            game.assets.get(Assets.HUD_HEART_FULL),
+            game.assets.get(Assets.HUD_HEART_EMPTY)
+        );
 
         cactusManager = new CactusManager(
             game.assets.get(Assets.CACTUS_PINK),
@@ -182,6 +190,7 @@ public class DesertScreen implements Screen {
         );
 
         enemyManager = new EnemyManager(
+            game.audio,
             game.assets.get(Assets.SOLDIER_IDLE),
             game.assets.get(Assets.SOLDIER_RUN),
             game.assets.get(Assets.SOLDIER_HURT),
@@ -194,7 +203,8 @@ public class DesertScreen implements Screen {
             GROUND_Y
         );
 
-        tankBulletSystem = new TankBulletSystem(game.assets.get(Assets.BULLET));
+        tankBulletSystem = new TankBulletSystem(game.audio, game.assets.get(Assets.BULLET));
+
         collisionSystem = new CollisionSystem();
 
         shapeRenderer = new ShapeRenderer();
@@ -221,13 +231,20 @@ public class DesertScreen implements Screen {
         float scale = WORLD_W / (float) tex.getWidth();
         return tex.getHeight() * scale;
     }
-
     @Override
     public void render(float delta) {
+
+        // ✅ inmunidad al reanudar (2s)
+        if (resumeImmunity > 0f) {
+            resumeImmunity -= delta;
+            if (resumeImmunity < 0f) resumeImmunity = 0f;
+        }
+
         ScreenUtils.clear(0, 0, 0, 1);
 
-        levelTimer += delta;
-        controls.setCounterText(formatTime(levelTimer));
+        // ✅ TIEMPO GLOBAL (continúa también en pirámide)
+        game.runTimeSeconds += delta;
+        controls.setCounterText(formatTime(game.runTimeSeconds));
 
         float viewportW = viewport.getWorldWidth();
         float maxScrollX = LevelConfig.DESERT_LENGTH - viewportW;
@@ -244,21 +261,33 @@ public class DesertScreen implements Screen {
             || Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT);
 
         boolean grenadeKey = Gdx.input.isKeyJustPressed(Input.Keys.L);
-        boolean pauseKey = Gdx.input.isKeyPressed(Input.Keys.ESCAPE);
+        boolean pauseKey   = Gdx.input.isKeyPressed(Input.Keys.ESCAPE);
 
         boolean left  = leftKey  || controls.leftPressed;
         boolean right = rightKey || controls.rightPressed;
 
-        boolean jump = jumpKey || controls.jumpPressed;
+        boolean jump  = jumpKey  || controls.jumpPressed;
         boolean shoot = shootKey || controls.shootPressed;
 
-        // ✅ especial
         boolean grenade = grenadeKey || controls.grenadePressed;
 
         boolean pauseNow = pauseKey || controls.pausePressed;
 
-        if (pauseNow && !pauseLatch) pauseLatch = true;
+        // ===================== PAUSA (✅ AQUÍ) =====================
+        if (pauseNow && !pauseLatch) {
+            pauseLatch = true;
+            controls.resetAll();
+
+            // ✅ al volver: snap + inmunidad
+            snapCameraOnResume = true;
+            resumeImmunity = RESUME_IMMUNITY_TIME;
+
+            ayla.stopAllLoops();
+            game.setScreen(new PauseScreen(game, this, PauseScreen.Context.DESERT));
+            return;
+        }
         if (!pauseNow) pauseLatch = false;
+        // ===========================================================
 
         if (cutsceneState == CutsceneState.NONE) {
 
@@ -289,10 +318,19 @@ public class DesertScreen implements Screen {
             // mundo congelado
         }
 
+        // ✅ CÁMARA (ARREGLADO: snapCameraOnResume)
         float targetCamX = scrollX + viewportW / 2f;
         if (cutsceneState != CutsceneState.FREEZE_AND_AYLA_WALKS_OFF) {
-            camera.position.x += (targetCamX - camera.position.x) * 10f * delta;
-            camera.update();
+
+            if (snapCameraOnResume) {
+                camera.position.x = targetCamX; // ✅ PUM (sin viaje)
+                camera.update();
+                snapCameraOnResume = false;
+            } else {
+                camera.position.x += (targetCamX - camera.position.x) * 10f * delta;
+                camera.update();
+            }
+
         } else {
             camera.update();
         }
@@ -350,14 +388,12 @@ public class DesertScreen implements Screen {
             ayla.setX(camLeft + AYLA_SCREEN_X);
             movingVisual = (left ^ right);
 
-            // ✅ ahora pasa grenade
             ayla.update(delta, left, right, jump, shoot, grenade, GROUND_Y, camLeft, camRight);
 
         } else if (cutsceneState == CutsceneState.AUTO_SCROLL_SHOW_DECOR) {
             ayla.setX(camLeft + AYLA_SCREEN_X);
             movingVisual = true;
 
-            // ✅ ahora pasa grenade (false)
             ayla.update(delta, false, true, false, false, false, GROUND_Y, camLeft, camRight);
 
         } else if (cutsceneState == CutsceneState.FREEZE_AND_AYLA_WALKS_OFF) {
@@ -366,20 +402,22 @@ public class DesertScreen implements Screen {
             float newX = ayla.getX() + AYLA_WALK_OFF_SPEED * delta;
             ayla.setX(newX);
 
-            // ✅ groundY NO existía aquí: era un bug. Debe ser GROUND_Y
             ayla.update(
                 delta,
-                controls.leftPressed,
-                controls.rightPressed,
-                controls.jumpPressed,
-                controls.shootPressed,
-                controls.grenadePressed,
+                false,  // left
+                false,  // right
+                false,  // jump
+                false,  // shoot
+                false,  // grenade
                 GROUND_Y,
                 camLeft,
-                camRight
+                camRight,
+                true
             );
 
             if (ayla.getX() > camRight + EXIT_MARGIN) {
+                game.vidas = ayla.getLives();
+                ayla.stopAllLoops();
                 game.setScreen(new PyramidScreen(game));
                 return;
             }
@@ -407,10 +445,28 @@ public class DesertScreen implements Screen {
                 new Runnable() {
                     @Override
                     public void run() {
+                        // knockback SIEMPRE
                         knockRemaining = KNOCKBACK_DISTANCE;
+
+                        // ✅ ARREGLADO: si estás en inmunidad, NO quita vida
+                        if (resumeImmunity <= 0f) {
+                            ayla.takeDamage();
+                            game.vidas = ayla.getLives();
+                        }
                     }
                 }
             );
+
+            if (ayla.isDead()) {
+                game.vidas = ayla.getLives();
+
+                // ✅ SFX game over (solo una vez aquí)
+                game.audio.playSfx(Assets.SFX_GAME_OVER);
+
+                ayla.stopAllLoops();
+                game.setScreen(new GameOverScreen(game));
+                return;
+            }
 
         } else {
             cactusManager.update(logicCamLeft);
@@ -443,7 +499,7 @@ public class DesertScreen implements Screen {
             drawEntranceIfVisible(camLeft, camRight);
         }
 
-        livesHUD.draw(game.batch, camLeft, camTop);
+        livesHUD.draw(game.batch, camLeft, camTop, ayla.getLives(), cutsceneState == CutsceneState.NONE);
 
         if (cutsceneState == CutsceneState.NONE) {
             controls.draw(
@@ -573,6 +629,9 @@ public class DesertScreen implements Screen {
     @Override
     public void show() {
         game.audio.playMusic(Assets.MUS_DESERT_THEME, true);
+        Gdx.input.setInputProcessor(controls); // ✅ recupera input
+        controls.resetAll();                   // ✅ evita teclas “pilladas”
+        pauseLatch = false;                    // ✅ por si acaso
     }
 
     @Override public void pause() {}

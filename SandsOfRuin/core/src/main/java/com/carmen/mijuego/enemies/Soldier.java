@@ -6,9 +6,13 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
+import com.carmen.mijuego.assets.Assets;
+import com.carmen.mijuego.audio.AudioManager;
 import com.carmen.mijuego.projectiles.Bullet;
 
 public class Soldier {
+
+    private final AudioManager audio;
 
     private enum State { IDLE, RUN, HURT, DEAD, GONE }
 
@@ -25,8 +29,6 @@ public class Soldier {
 
     // ===== COMPORTAMIENTO =====
     private static final float RUN_SPEED = 260f;
-
-    // DISTANCIA MINIMA
     private static final float STOP_DISTANCE = 800f;
 
     // DISPARO (solo parado)
@@ -43,8 +45,8 @@ public class Soldier {
     private static final float HURT_DURATION = 0.35f;
 
     // ===== BLINK (DEAD) =====
-    private static final int BLINK_TIMES = 3;          // 3 parpadeos
-    private static final float BLINK_INTERVAL = 0.10f; // 0.10s por cambio visible/invisible
+    private static final int BLINK_TIMES = 3;
+    private static final float BLINK_INTERVAL = 0.10f;
 
     // ===== HITBOX =====
     private static final float HIT_PAD_L = 120f * SCALE;
@@ -66,9 +68,12 @@ public class Soldier {
     private float shootTimer = 0f;
     private float hurtTimer = 0f;
 
+    // ✅ decidir run/idle en State.RUN
+    private boolean moving = false;
+
     // blink
     private float blinkTimer = 0f;
-    private int blinkToggles = 0;      // contamos “cambios” visible/invisible
+    private int blinkToggles = 0;
     private boolean visible = true;
 
     private int hitsTaken = 0;
@@ -78,17 +83,19 @@ public class Soldier {
 
     private final Rectangle bounds = new Rectangle();
 
-    // Para decidir idle cuando está cerca
-    private float aylaReferenceX = 0f;
-    public void setAylaX(float x) { this.aylaReferenceX = x; }
+    // SFX continuo correr
+    private long runLoopId = -1;
 
-    public Soldier(Texture idleTex,
+    public Soldier(AudioManager audio,
+                   Texture idleTex,
                    Texture runSheet,
                    Texture hurtSheet,
                    Texture deadTex,
                    Texture bulletTex,
                    float startX,
                    float startY) {
+
+        this.audio = audio;
 
         this.idleTex = idleTex;
         this.deadTex = deadTex;
@@ -117,32 +124,34 @@ public class Soldier {
     public void update(float delta, float aylaX, float camLeft, float camRight) {
         stateTime += delta;
 
-        if (state == State.GONE) {
-            return;
-        }
+        if (state == State.GONE) return;
 
         // IDLE -> RUN cuando entra en pantalla
         if (state == State.IDLE) {
             if (x < camRight + 10f) {
                 state = State.RUN;
                 stateTime = 0f;
+                moving = false;
             }
         }
 
         if (state == State.RUN) {
-            // mirar hacia Ayla
             facingRight = aylaX > x;
 
             float dx = aylaX - x;
             float absDx = Math.abs(dx);
-
             boolean stopped = absDx <= STOP_DISTANCE;
 
-            // corre si está lejos
             if (!stopped) {
                 float dir = dx > 0 ? 1f : -1f;
                 x += dir * RUN_SPEED * delta;
+                moving = true;
+            } else {
+                moving = false;
             }
+
+            // ✅ correr -> CharacterRun (loop)
+            handleRunSfx();
 
             // dispara solo cuando está parado
             if (stopped) {
@@ -154,7 +163,7 @@ public class Soldier {
             }
         }
 
-        // HURT -> DEAD (una sola vez)
+        // HURT -> DEAD
         if (state == State.HURT) {
             hurtTimer -= delta;
             if (hurtTimer <= 0f) {
@@ -162,22 +171,24 @@ public class Soldier {
             }
         }
 
-        // DEAD -> parpadeo -> GONE
+        // DEAD -> blink -> GONE
         if (state == State.DEAD) {
+            // parar run loop si quedaba
+            stopRunLoop();
+
             blinkTimer += delta;
             if (blinkTimer >= BLINK_INTERVAL) {
                 blinkTimer = 0f;
                 visible = !visible;
                 blinkToggles++;
 
-                // 1 parpadeo = visible->invisible->visible (2 toggles)
                 if (blinkToggles >= BLINK_TIMES * 2) {
                     state = State.GONE;
                 }
             }
         }
 
-        // Balas del soldado (solo mientras no esté gone)
+        // Balas
         for (int i = bullets.size - 1; i >= 0; i--) {
             Bullet b = bullets.get(i);
             b.update(delta);
@@ -191,8 +202,29 @@ public class Soldier {
         updateBounds();
     }
 
+    private void handleRunSfx() {
+        boolean shouldRun = (state == State.RUN) && moving;
+        if (shouldRun) {
+            if (runLoopId == -1) {
+                runLoopId = audio.loopSfx(Assets.SFX_CHARACTER_RUN, 0.30f);
+            }
+        } else {
+            stopRunLoop();
+        }
+    }
+
+    private void stopRunLoop() {
+        if (runLoopId != -1) {
+            audio.stopLoop(Assets.SFX_CHARACTER_RUN, runLoopId);
+            runLoopId = -1;
+        }
+    }
+
     private void shoot() {
         if (state != State.RUN) return;
+
+        // ✅ soldado dispara -> ShotGun2
+        audio.playSfx(Assets.SFX_SHOT_GUN_2);
 
         float dir = facingRight ? 1f : -1f;
 
@@ -214,18 +246,20 @@ public class Soldier {
     }
 
     public void hitByAylaBullet() {
-        // ✅ Si ya está en HURT/DEAD/GONE, NO reactiva nada
         if (state == State.HURT || state == State.DEAD || state == State.GONE) return;
 
         hitsTaken++;
 
-        // ✅ al segundo disparo: entra en HURT una vez y luego muere
+        // ✅ primer disparo -> SoldierDamage
+        if (hitsTaken == 1) {
+            audio.playSfx(Assets.SFX_SOLDIER_DAMAGE);
+        }
+
         if (hitsTaken >= 2) {
             state = State.HURT;
             stateTime = 0f;
             hurtTimer = HURT_DURATION;
 
-            // ✅ quitar hitbox durante HURT (y ya no vuelve)
             bounds.set(0, 0, 0, 0);
         }
     }
@@ -234,12 +268,13 @@ public class Soldier {
         state = State.DEAD;
         stateTime = 0f;
 
-        // blink reset
+        // ✅ soldado muere -> SoldierDead
+        audio.playSfx(Assets.SFX_SOLDIER_DEAD);
+
         blinkTimer = 0f;
         blinkToggles = 0;
         visible = true;
 
-        // ✅ sin hitbox en DEAD
         bounds.set(0, 0, 0, 0);
     }
 
@@ -251,24 +286,24 @@ public class Soldier {
 
         if (state == State.DEAD) {
             drawTexture(batch, deadTex, drawY);
+
         } else if (state == State.HURT) {
             TextureRegion f = hurtAnim.getKeyFrame(stateTime, false);
             drawRegion(batch, f, drawY);
+
         } else if (state == State.RUN) {
-            if (Math.abs(x - aylaReferenceX) <= STOP_DISTANCE) {
-                drawTexture(batch, idleTex, drawY);
-            } else {
+            if (moving) {
                 TextureRegion f = runAnim.getKeyFrame(stateTime, true);
                 drawRegion(batch, f, drawY);
+            } else {
+                drawTexture(batch, idleTex, drawY);
             }
+
         } else {
             drawTexture(batch, idleTex, drawY);
         }
 
-        // balas
-        for (Bullet b : bullets) {
-            b.draw(batch);
-        }
+        for (Bullet b : bullets) b.draw(batch);
     }
 
     private void drawTexture(SpriteBatch batch, Texture tex, float drawY) {
@@ -282,7 +317,6 @@ public class Soldier {
     }
 
     private void updateBounds() {
-        // ✅ SIN HITBOX en HURT/DEAD/GONE
         if (state == State.HURT || state == State.DEAD || state == State.GONE) {
             bounds.set(0, 0, 0, 0);
             return;

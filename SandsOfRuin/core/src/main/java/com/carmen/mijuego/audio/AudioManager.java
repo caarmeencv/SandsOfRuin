@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetDescriptor;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
+
 import com.carmen.mijuego.assets.Assets;
 
 public class AudioManager {
@@ -29,7 +30,6 @@ public class AudioManager {
         try {
             Music newMusic = assets.get(musicDesc);
 
-            // si ya está sonando esa misma música, no la reinicies
             if (currentMusic == newMusic) return;
 
             stopMusic();
@@ -40,7 +40,6 @@ public class AudioManager {
             currentMusic.play();
 
         } catch (Exception e) {
-            // ✅ en vez de petar "sin saber", lo verás en Logcat
             Gdx.app.error("AudioManager", "ERROR reproduciendo music: " + musicDesc.fileName, e);
         }
     }
@@ -66,6 +65,10 @@ public class AudioManager {
         if (!musicEnabled) stopMusic();
     }
 
+    public boolean isMusicEnabled() {
+        return musicEnabled;
+    }
+
     // ===================== SFX =====================
     public void playSfx(AssetDescriptor<Sound> sfxDesc) {
         if (!sfxEnabled) return;
@@ -78,12 +81,54 @@ public class AudioManager {
         }
     }
 
+    /** Para sonidos continuos (correr, motor tanque, gruñidos momia). Devuelve id de loop. */
+    public long loopSfx(AssetDescriptor<Sound> sfxDesc, float volumeMultiplier) {
+        if (!sfxEnabled) return -1;
+
+        try {
+            Sound s = assets.get(sfxDesc);
+            float vol = clamp01(sfxVol * volumeMultiplier);
+            return s.loop(vol);
+        } catch (Exception e) {
+            Gdx.app.error("AudioManager", "ERROR loop sfx: " + sfxDesc.fileName, e);
+            return -1;
+        }
+    }
+
+    /** Para parar un loop concreto (el id devuelto por loopSfx). */
+    public void stopLoop(AssetDescriptor<Sound> sfxDesc, long loopId) {
+        if (loopId == -1) return;
+
+        try {
+            Sound s = assets.get(sfxDesc);
+            s.stop(loopId);
+        } catch (Exception e) {
+            Gdx.app.error("AudioManager", "ERROR stop loop sfx: " + sfxDesc.fileName, e);
+        }
+    }
+
+    /** (Opcional) Para cortar TODO el sonido SFX de golpe. */
+    public void stopAllSfx() {
+        // Esto para todos los sonidos reproducidos por TODOS los Sound cargados.
+        // Úsalo solo si quieres un "mute hard".
+        // En general, mejor parar loops por id (como haces con Ayla).
+        // Aquí no podemos iterar todos los Sound fácilmente sin guardarlos, así que lo dejamos vacío a propósito.
+    }
+
     public void setSfxVolume(float v) {
         sfxVol = clamp01(v);
     }
 
     public void setSfxEnabled(boolean enabled) {
         sfxEnabled = enabled;
+
+        // ✅ Importante: si desactivas SFX mientras hay loops sonando,
+        // esos loops NO se paran solos. Lo ideal es que cada entidad pare sus loops.
+        // Aquí no podemos pararlos por id porque cada entidad guarda su id.
+    }
+
+    public boolean isSfxEnabled() {
+        return sfxEnabled;
     }
 
     private float clamp01(float v) {

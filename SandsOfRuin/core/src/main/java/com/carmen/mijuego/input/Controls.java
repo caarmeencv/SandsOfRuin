@@ -12,6 +12,9 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
+import com.carmen.mijuego.assets.Assets;
+import com.carmen.mijuego.audio.AudioManager;
+
 public class Controls implements InputProcessor {
 
     public boolean leftPressed;
@@ -38,6 +41,9 @@ public class Controls implements InputProcessor {
     private final Vector2 touch = new Vector2();
     private final Viewport viewport;
 
+    // ✅ Audio para clicks
+    private final AudioManager audio;
+
     // Multitouch: un dedo por botón
     private int leftPointer = -1;
     private int rightPointer = -1;
@@ -57,9 +63,11 @@ public class Controls implements InputProcessor {
     // ✅ Cooldown ring
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
 
-    public Controls(Viewport viewport,
+    public Controls(AudioManager audio,
+                    Viewport viewport,
                     Texture left, Texture right, Texture jump,
                     Texture shoot, Texture grenade, Texture pause) {
+        this.audio = audio;
         this.viewport = viewport;
         this.left = left;
         this.right = right;
@@ -190,11 +198,9 @@ public class Controls implements InputProcessor {
         float cx = r.x + r.width / 2f;
         float cy = r.y + r.height / 2f;
 
-        // un poco más grande que el botón
         float radius = Math.min(r.width, r.height) * 0.70f;
 
         int segments = 48;
-
         shapeRenderer.arc(cx, cy, radius, 90f, -angle, segments);
     }
 
@@ -210,12 +216,12 @@ public class Controls implements InputProcessor {
     }
 
     private void releasePointer(int pointer) {
-        if (pointer == leftPointer) { leftPointer = -1; leftPressed = false; }
-        if (pointer == rightPointer) { rightPointer = -1; rightPressed = false; }
-        if (pointer == jumpPointer) { jumpPointer = -1; jumpPressed = false; }
-        if (pointer == shootPointer) { shootPointer = -1; shootPressed = false; }
+        if (pointer == leftPointer)    { leftPointer = -1; leftPressed = false; }
+        if (pointer == rightPointer)   { rightPointer = -1; rightPressed = false; }
+        if (pointer == jumpPointer)    { jumpPointer = -1; jumpPressed = false; }
+        if (pointer == shootPointer)   { shootPointer = -1; shootPressed = false; }
         if (pointer == grenadePointer) { grenadePointer = -1; grenadePressed = false; }
-        if (pointer == pausePointer) { pausePointer = -1; pausePressed = false; }
+        if (pointer == pausePointer)   { pausePointer = -1; pausePressed = false; }
     }
 
     // ===================== INPUT TÁCTIL =====================
@@ -251,6 +257,10 @@ public class Controls implements InputProcessor {
         if (pausePointer == -1 && rPause.contains(touch)) {
             pausePointer = pointer;
             pausePressed = true;
+
+            // ✅ PAUSE -> ButtonClicked
+            if (audio != null) audio.playSfx(Assets.SFX_BUTTON_CLICKED);
+
             return true;
         }
 
@@ -278,17 +288,20 @@ public class Controls implements InputProcessor {
         if (keycode == Input.Keys.W || keycode == Input.Keys.SPACE) jumpPressed = true;
 
         if (keycode == Input.Keys.K) shootPressed = true;
-
         if (keycode == Input.Keys.L) grenadePressed = true;
 
-        if (keycode == Input.Keys.ESCAPE) pausePressed = true;
+        if (keycode == Input.Keys.ESCAPE) {
+            pausePressed = true;
+
+            // ✅ ESC -> ButtonClicked
+            if (audio != null) audio.playSfx(Assets.SFX_BUTTON_CLICKED);
+        }
 
         return false;
     }
 
     @Override
     public boolean keyUp(int keycode) {
-
         if (keycode == Input.Keys.A) leftPressed = false;
         if (keycode == Input.Keys.D) rightPressed = false;
 
@@ -307,6 +320,23 @@ public class Controls implements InputProcessor {
     @Override public boolean touchDragged(int screenX, int screenY, int pointer) { return false; }
     @Override public boolean mouseMoved(int screenX, int screenY) { return false; }
     @Override public boolean scrolled(float amountX, float amountY) { return false; }
+
+    /** ✅ Limpia TODOS los botones y punteros multitouch (pausa / cambio de pantalla). */
+    public void resetAll() {
+        leftPressed = false;
+        rightPressed = false;
+        jumpPressed = false;
+        shootPressed = false;
+        grenadePressed = false;
+        pausePressed = false;
+
+        leftPointer = -1;
+        rightPointer = -1;
+        jumpPointer = -1;
+        shootPointer = -1;
+        grenadePointer = -1;
+        pausePointer = -1;
+    }
 
     public void dispose() {
         font.dispose();

@@ -12,19 +12,28 @@ public class Main extends Game {
     public Assets assets;
     public AudioManager audio;
 
+    public int vidas = 5;
+    public float runTimeSeconds = 0f;
+
     @Override
     public void create() {
         batch = new SpriteBatch();
 
         assets = new Assets();
         assets.queueLoadAll();
-
-        // ✅ si aquí peta, es que falta algún archivo o ruta mal
         assets.finishLoading();
 
         audio = new AudioManager(assets);
 
+        resetRun(); // ✅ inicializa run nueva
+
         setScreen(new IntroScreen(this));
+    }
+
+    // ✅ NUEVO
+    public void resetRun() {
+        vidas = 5;
+        runTimeSeconds = 0f;
     }
 
     @Override

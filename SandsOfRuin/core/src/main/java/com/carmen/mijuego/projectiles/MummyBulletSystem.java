@@ -3,28 +3,25 @@ package com.carmen.mijuego.projectiles;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
+
+import com.carmen.mijuego.assets.Assets;
+import com.carmen.mijuego.audio.AudioManager;
 import com.carmen.mijuego.enemies.Mummy;
 
-/**
- * Sistema de balas de la momia (tipo TankBulletSystem):
- * - decide cuándo dispara la momia (m.canShoot(delta))
- * - crea balas con BULLET_MUMMY
- * - actualiza, elimina fuera
- * - dibuja
- */
 public class MummyBulletSystem {
 
     private static final float MUMMY_BULLET_W = 70f;
     private static final float MUMMY_BULLET_H = 34f;
     private static final float MUMMY_BULLET_SPEED = 820f;
 
-    // altura aproximada desde el suelo hasta "la mano/boca" (ajústalo si lo ves alto/bajo)
     private static final float MUMMY_MUZZLE_Y = 210f;
 
+    private final AudioManager audio; // ✅ NUEVO
     private final Texture bulletTexture;
     private final Array<Bullet> bullets = new Array<>();
 
-    public MummyBulletSystem(Texture bulletTexture) {
+    public MummyBulletSystem(AudioManager audio, Texture bulletTexture) {
+        this.audio = audio;
         this.bulletTexture = bulletTexture;
     }
 
@@ -33,6 +30,9 @@ public class MummyBulletSystem {
 
         // ================= DISPARO =================
         if (mummy.canShoot(delta)) {
+
+            // ✅ SONIDO disparo momia
+            if (audio != null) audio.playSfx(Assets.SFX_MUMMY_SHOTS);
 
             boolean right = mummy.isFacingRight();
 

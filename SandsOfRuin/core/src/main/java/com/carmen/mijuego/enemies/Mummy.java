@@ -5,8 +5,12 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
+import com.carmen.mijuego.assets.Assets;
+import com.carmen.mijuego.audio.AudioManager;
 
 public class Mummy {
+
+    private final AudioManager audio;
 
     public enum State { IDLE, WALK, DYING_HURT, DEAD }
 
@@ -27,10 +31,9 @@ public class Mummy {
     private int hp = HP_MAX;
 
     private static final float SPEED = 45f;
-    private static final float STOP_DISTANCE = 380f;
+    private static final float STOP_DISTANCE = 650f;
 
-    // ✅ DISPARO MUMMY
-    private static final float SHOOT_COOLDOWN = 1.35f; // cadencia
+    private static final float SHOOT_COOLDOWN = 2.20f;
     private float shootTimer = 0f;
 
     private static final float HIT_SCALE = 0.40f;
@@ -58,7 +61,12 @@ public class Mummy {
 
     private final Rectangle bounds = new Rectangle();
 
-    public Mummy(Texture idle, Texture walk, Texture hurt, Texture dead, float startX, float groundY) {
+    // SFX continuo gruñidos
+    private long gruntsLoopId = -1;
+
+    public Mummy(AudioManager audio, Texture idle, Texture walk, Texture hurt, Texture dead, float startX, float groundY) {
+        this.audio = audio;
+
         this.idleTex = idle;
         this.walkSheet = walk;
         this.hurtSheet = hurt;
@@ -85,16 +93,19 @@ public class Mummy {
 
     public void update(float delta, float aylaX, float groundY) {
 
-        if (state == State.DEAD) return;
+        if (state == State.DEAD) {
+            stopGrunts();
+            return;
+        }
 
         this.y = groundY + FOLLOW_Y_OFFSET;
         stateTime += delta;
 
-        // ✅ timer disparo
         shootTimer -= delta;
         if (shootTimer < 0f) shootTimer = 0f;
 
         if (state == State.DYING_HURT) {
+            stopGrunts();
             if (hurtAnim.isAnimationFinished(stateTime)) {
                 enterDead();
             }
@@ -105,36 +116,55 @@ public class Mummy {
         facingRight = dx > 0;
         float dist = Math.abs(dx);
 
-        // cerca -> se queda IDLE (y aquí podrá disparar)
         if (dist <= STOP_DISTANCE) {
+            // cerca -> IDLE
             if (state != State.IDLE) {
                 state = State.IDLE;
                 stateTime = 0f;
             }
+            stopGrunts(); // ✅ solo gruñe andando
             updateBounds();
             return;
         }
 
-        // lejos -> camina hacia Ayla
+        // lejos -> WALK
         if (state != State.WALK) {
             state = State.WALK;
             stateTime = 0f;
         }
 
+        // ✅ andando -> MummyGrunts (loop)
+        startGrunts();
+
         x += Math.signum(dx) * SPEED * delta;
         updateBounds();
+    }
+
+    private void startGrunts() {
+        if (gruntsLoopId == -1) {
+            gruntsLoopId = audio.loopSfx(Assets.SFX_MUMMY_GRUNTS, 0.35f);
+        }
+    }
+
+    private void stopGrunts() {
+        if (gruntsLoopId != -1) {
+            audio.stopLoop(Assets.SFX_MUMMY_GRUNTS, gruntsLoopId);
+            gruntsLoopId = -1;
+        }
     }
 
     /** ✅ Decide si este frame la momia dispara */
     public boolean canShoot(float delta) {
         if (state == State.DEAD || state == State.DYING_HURT) return false;
 
-        // dispara cuando está en IDLE (ya está cerca de Ayla)
         if (state != State.IDLE) return false;
-
         if (shootTimer > 0f) return false;
 
         shootTimer = SHOOT_COOLDOWN;
+
+        // ✅ momia dispara -> MummyShots
+        audio.playSfx(Assets.SFX_MUMMY_SHOTS);
+
         return true;
     }
 
@@ -166,6 +196,7 @@ public class Mummy {
             state = State.DYING_HURT;
             stateTime = 0f;
             bounds.set(0, 0, 0, 0);
+            stopGrunts();
         }
     }
 
@@ -173,6 +204,11 @@ public class Mummy {
         state = State.DEAD;
         stateTime = 0f;
         bounds.set(0, 0, 0, 0);
+
+        stopGrunts();
+
+        // ✅ momia muere -> MummyDead
+        audio.playSfx(Assets.SFX_MUMMY_DEAD);
     }
 
     public void applyWorldScroll(float dx) {
@@ -181,7 +217,6 @@ public class Mummy {
         }
     }
 
-    // ===== GETTERS =====
     public float getX() { return x; }
     public float getY() { return y; }
     public float getWidth() { return width; }
@@ -191,7 +226,6 @@ public class Mummy {
     public boolean isDead() { return state == State.DEAD; }
     public int getHp() { return hp; }
 
-    // ===== anim helpers =====
     private Animation<TextureRegion> buildAnimLoop(Texture sheet, float frameDuration) {
         TextureRegion[] frames = splitAllFrames(sheet);
         Animation<TextureRegion> anim = new Animation<>(frameDuration, frames);

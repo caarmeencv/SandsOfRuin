@@ -42,7 +42,23 @@ public class CollisionSystem {
         }
 
         /* =======================================
-           2) AYLA VS TANK (CUERPO)
+           2) AYLA VS SOLDIER (CUERPO)  ✅ NUEVO
+        ======================================== */
+        if (cooldown <= 0f) {
+            for (Soldier s : soldiers) {
+                if (s.isDead() || s.isGone()) continue;
+
+                // Nota: si el soldado está en HURT/DEAD tú ya le pones bounds a 0,
+                // así que aquí solo chocará si realmente tiene hitbox activa.
+                if (aylaBounds.overlaps(s.getBounds())) {
+                    triggerHit(onHit);
+                    return;
+                }
+            }
+        }
+
+        /* =======================================
+           3) AYLA VS TANK (CUERPO)
         ======================================== */
         if (cooldown <= 0f) {
             for (Tank t : tanks) {
@@ -56,7 +72,7 @@ public class CollisionSystem {
         }
 
         /* =======================================
-           3) BALAS SOLDIER -> AYLA
+           4) BALAS SOLDIER -> AYLA
         ======================================== */
         if (cooldown <= 0f) {
             for (Soldier s : soldiers) {
@@ -75,7 +91,7 @@ public class CollisionSystem {
         }
 
         /* =======================================
-           4) BALAS TANK -> AYLA
+           5) BALAS TANK -> AYLA
         ======================================== */
         if (cooldown <= 0f) {
             for (int i = tankBullets.size - 1; i >= 0; i--) {
@@ -90,7 +106,7 @@ public class CollisionSystem {
         }
 
         /* =======================================
-           5) BALAS AYLA -> SOLDIERS (✅ daño)
+           6) BALAS AYLA -> SOLDIERS (✅ daño)
         ======================================== */
         Array<Bullet> aylaBullets = ayla.getBullets();
 
@@ -115,7 +131,7 @@ public class CollisionSystem {
         }
 
         /* =======================================
-           6) BALAS AYLA -> TANKS (✅ daño)
+           7) BALAS AYLA -> TANKS (✅ daño)
         ======================================== */
         for (int i = aylaBullets.size - 1; i >= 0; i--) {
             Bullet ab = aylaBullets.get(i);
