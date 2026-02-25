@@ -32,11 +32,6 @@ public class CreditsScreen implements Screen {
 
     private GlyphLayout layout = new GlyphLayout();
 
-    private static final String TITLE = "CREDITOS";
-
-    private String creditsText;
-
-    private static final String HINT_TEXT = "Toca para volver";
     private float blinkTime = 0f;
 
     public CreditsScreen(Main game) {
@@ -51,23 +46,14 @@ public class CreditsScreen implements Screen {
 
         bg = game.assets.get(Assets.SCREEN_CREDITS_BG);
 
-        // 🔥 Fuente grande para título
         fontTitle = new BitmapFont();
         fontTitle.getData().setScale(4.0f);
 
-        // Fuente normal
         fontMain = new BitmapFont();
         fontMain.getData().setScale(2.0f);
 
-        // Fuente pequeña para hint
         fontHint = new BitmapFont();
         fontHint.getData().setScale(1.6f);
-
-        creditsText =
-            "Desarrollo: Carmen\n" +
-                "Proyecto: Sands of Ruin\n\n" +
-                "Arte:\n- ChatGPT\n\n" +
-                "Musica y SFX:\n- Pixabay\n";
     }
 
     @Override
@@ -94,62 +80,27 @@ public class CreditsScreen implements Screen {
         viewport.apply();
         game.batch.setProjectionMatrix(camera.combined);
 
+        String title = game.i18n.t("credits.title");
+        String creditsText = game.i18n.t("credits.text");
+        String hintText = game.i18n.t("credits.hint");
+
         game.batch.begin();
 
-        // Fondo
         game.batch.draw(bg, 0, 0, WORLD_W, WORLD_H);
 
-        // -------- TITULO GRANDE --------
-        layout.setText(fontTitle, TITLE);
+        // Título
+        float titleY = WORLD_H - 120f;
+        fontTitle.draw(game.batch, title, 0, titleY, WORLD_W, Align.center, false);
 
-        float titleY = WORLD_H - 120f; // un poco debajo del borde superior
-
-        fontTitle.draw(
-            game.batch,
-            TITLE,
-            0,
-            titleY,
-            WORLD_W,
-            Align.center,
-            false
-        );
-
-        // -------- TEXTO PRINCIPAL --------
-        layout.setText(
-            fontMain,
-            creditsText,
-            com.badlogic.gdx.graphics.Color.WHITE,
-            WORLD_W * 0.8f,
-            Align.center,
-            true
-        );
-
+        // Texto principal
+        layout.setText(fontMain, creditsText, com.badlogic.gdx.graphics.Color.WHITE, WORLD_W * 0.8f, Align.center, true);
         float mainY = WORLD_H / 2f + layout.height / 2f - 40f;
+        fontMain.draw(game.batch, creditsText, 0, mainY, WORLD_W, Align.center, true);
 
-        fontMain.draw(
-            game.batch,
-            creditsText,
-            0,
-            mainY,
-            WORLD_W,
-            Align.center,
-            true
-        );
-
-        // -------- TEXTO INFERIOR PARPADEANTE --------
+        // Hint parpadeo
         float alpha = 0.4f + 0.6f * (0.5f + 0.5f * (float)Math.sin(blinkTime * 4f));
         fontHint.setColor(1f, 1f, 1f, alpha);
-
-        fontHint.draw(
-            game.batch,
-            HINT_TEXT,
-            0,
-            60f,
-            WORLD_W,
-            Align.center,
-            false
-        );
-
+        fontHint.draw(game.batch, hintText, 0, 60f, WORLD_W, Align.center, false);
         fontHint.setColor(1f, 1f, 1f, 1f);
 
         game.batch.end();

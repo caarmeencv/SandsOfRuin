@@ -15,6 +15,12 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.carmen.mijuego.Main;
 import com.carmen.mijuego.assets.Assets;
 
+/**
+ * Pantalla de pausa.
+ * - CONTINUAR: vuelve a la pantalla desde la que se pausó.
+ * - REINICIAR: reinicia la partida completa (empieza desde DESERT).
+ * - VOLVER AL MENU: vuelve al menú principal.
+ */
 public class PauseScreen implements Screen {
 
     public enum Context { DESERT, PYRAMID }
@@ -57,10 +63,11 @@ public class PauseScreen implements Screen {
         camera.position.set(WORLD_W / 2f, WORLD_H / 2f, 0f);
         camera.update();
 
-        if (context == Context.DESERT)
+        if (context == Context.DESERT) {
             bg = game.assets.get(Assets.SCREEN_PAUSE_BG_DESERT);
-        else
+        } else {
             bg = game.assets.get(Assets.SCREEN_PAUSE_BG_PYRAMID);
+        }
 
         btnContinue = game.assets.get(Assets.SCREEN_PAUSE_BTN_CONTINUE);
         btnReset    = game.assets.get(Assets.SCREEN_PAUSE_BTN_RESET);
@@ -97,7 +104,6 @@ public class PauseScreen implements Screen {
     }
 
     private void drawButton(Texture tex, Rectangle r, boolean hover, String text) {
-
         float scale = hover ? HOVER_SCALE : 1f;
 
         float w = r.width * scale;
@@ -125,6 +131,11 @@ public class PauseScreen implements Screen {
         font.getData().setScale(baseScale);
     }
 
+    private void restartFullRun() {
+        game.resetRun();
+        game.setScreen(new DesertScreen(game));
+    }
+
     @Override
     public void show() {
         game.audio.playMusic(Assets.MUS_PAUSE_THEME, true);
@@ -133,7 +144,6 @@ public class PauseScreen implements Screen {
 
     @Override
     public void render(float delta) {
-
         updatePointer();
 
         if (Gdx.input.justTouched()) {
@@ -144,11 +154,7 @@ public class PauseScreen implements Screen {
             }
 
             if (hoverReset) {
-                game.resetRun();
-                if (context == Context.DESERT)
-                    game.setScreen(new DesertScreen(game));
-                else
-                    game.setScreen(new PyramidScreen(game));
+                restartFullRun();
                 return;
             }
 
@@ -173,9 +179,9 @@ public class PauseScreen implements Screen {
 
         game.batch.draw(bg, 0, 0, WORLD_W, WORLD_H);
 
-        drawButton(btnContinue, rContinue, hoverContinue, "CONTINUAR");
-        drawButton(btnReset, rReset, hoverReset, "REINICIAR");
-        drawButton(btnMenu, rMenu, hoverMenu, "VOLVER AL MENU");
+        drawButton(btnContinue, rContinue, hoverContinue, game.i18n.t("pause.continue"));
+        drawButton(btnReset, rReset, hoverReset, game.i18n.t("pause.restart"));
+        drawButton(btnMenu, rMenu, hoverMenu, game.i18n.t("pause.menu"));
 
         game.batch.end();
     }

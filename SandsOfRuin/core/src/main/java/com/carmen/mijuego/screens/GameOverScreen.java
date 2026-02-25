@@ -51,14 +51,12 @@ public class GameOverScreen implements Screen {
 
     @Override
     public void show() {
-        // Música de game over
         game.audio.playMusic(Assets.MUS_GAME_OVER_THEME, true);
     }
 
     @Override
     public void render(float delta) {
 
-        // Input (móvil + PC)
         if (Gdx.input.justTouched() || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             if (!clickedOnce) {
                 clickedOnce = true;
@@ -77,7 +75,7 @@ public class GameOverScreen implements Screen {
 
         game.batch.draw(background, 0, 0, WORLD_W, WORLD_H);
 
-        String text = "Toca para volver al menu\nPulsa ESC para volver al menu";
+        String text = game.i18n.t("ui.back_to_menu_hint");
         layout.setText(font, text);
 
         float x = (WORLD_W - layout.width) / 2f;

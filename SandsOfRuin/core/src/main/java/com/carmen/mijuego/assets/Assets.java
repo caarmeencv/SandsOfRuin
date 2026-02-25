@@ -94,7 +94,7 @@ public class Assets {
     public static final AssetDescriptor<Texture> HUD_HEART_FULL =
         new AssetDescriptor<>(AssetPaths.HUD_HEART_FULL, Texture.class);
     public static final AssetDescriptor<Texture> HUD_HEART_EMPTY =
-        new AssetDescriptor<>(AssetPaths.HUD_HEART_FULL, Texture.class);
+        new AssetDescriptor<>(AssetPaths.HUD_HEART_EMPTY, Texture.class);
 
     // ===== SCREENS =====
     public static final AssetDescriptor<Texture> SCREEN_INTRO =
@@ -119,6 +119,18 @@ public class Assets {
 
     public static final AssetDescriptor<Sound> SFX_CHARACTER_RUN =
         new AssetDescriptor<>(AssetPaths.SFX_CHARACTER_RUN, Sound.class);
+    // ===== OPTIONS SWITCHES =====
+    public static final AssetDescriptor<Texture> SWITCH_ON =
+        new AssetDescriptor<>(AssetPaths.SWITCH_ON, Texture.class);
+
+    public static final AssetDescriptor<Texture> SWITCH_OFF =
+        new AssetDescriptor<>(AssetPaths.SWITCH_OFF, Texture.class);
+
+    public static final AssetDescriptor<Texture> SWITCH_EN =
+        new AssetDescriptor<>(AssetPaths.SWITCH_EN, Texture.class);
+
+    public static final AssetDescriptor<Texture> SWITCH_ES =
+        new AssetDescriptor<>(AssetPaths.SWITCH_ES, Texture.class);
 
     public static final AssetDescriptor<Sound> SFX_LIVE =
         new AssetDescriptor<>(AssetPaths.SFX_LIVE, Sound.class);
@@ -260,6 +272,12 @@ public class Assets {
         manager.load(SCREEN_PAUSE_BTN_CONTINUE);
         manager.load(SCREEN_PAUSE_BTN_MENU);
         manager.load(SCREEN_PAUSE_BTN_RESET);
+        // Options switches
+        manager.load(SWITCH_ON);
+        manager.load(SWITCH_OFF);
+        manager.load(SWITCH_EN);
+        manager.load(SWITCH_ES);
+
 
         // ✅ Credits
         manager.load(SCREEN_CREDITS_BG);
@@ -388,6 +406,11 @@ public class Assets {
         setLinear(ENTRANCE_PYRAMID);
 
         setLinear(TREASURE);
+
+        setLinear(SWITCH_ON);
+        setLinear(SWITCH_OFF);
+        setLinear(SWITCH_EN);
+        setLinear(SWITCH_ES);
 
         // ✅ Credits
         setLinear(SCREEN_CREDITS_BG);

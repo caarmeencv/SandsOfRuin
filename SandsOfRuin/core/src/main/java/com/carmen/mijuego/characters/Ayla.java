@@ -401,7 +401,7 @@ public class Ayla {
         if (Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Android) {
             try {
                 if (Gdx.input.isPeripheralAvailable(Input.Peripheral.Vibrator)) {
-                    Gdx.input.vibrate(150);
+                    audio.vibrate(150);
                 }
             } catch (Exception ignored) {}
         }

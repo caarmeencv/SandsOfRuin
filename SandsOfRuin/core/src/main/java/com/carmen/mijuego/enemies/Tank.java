@@ -18,7 +18,8 @@ public class Tank {
     private static final int MOVE_FRAMES = 4;
     private static final int DESTROY_FRAMES = 15;
 
-    private static final float SCALE = 1.60f;
+    // ✅ MÁS PEQUEÑO
+    private static final float SCALE = 1.35f;
 
     // IA
     private static final float MOVE_SPEED = 230f;
@@ -34,6 +35,11 @@ public class Tank {
 
     private static final float SHOOT_COOLDOWN = 2.2f;
     private float shootTimer = 0f;
+
+    // ✅ DISPARO MÁS ABAJO (offset del cañón dentro del sprite)
+    // Ajusta este valor si lo quieres aún más bajo/alto:
+    private static final float MUZZLE_Y_RATIO = 0.30f; // 0..1 (más bajo = menor)
+    private static final float MUZZLE_X_RATIO = 0.88f; // cerca del frontal del tanque
 
     private static final int BLINK_TIMES = 3;
     private static final float BLINK_INTERVAL = 0.10f;
@@ -167,20 +173,19 @@ public class Tank {
         }
     }
 
+    /**
+     * ✅ Ahora puede disparar tanto en IDLE como en MOVE.
+     * Solo se bloquea si está muriendo/destrozado/gone.
+     */
     public boolean canShoot(float delta) {
         if (state == State.DEAD || state == State.DESTROY || state == State.GONE) return false;
 
-        if (state != State.IDLE) {
-            shootTimer = 0f;
-            return false;
-        }
-
+        // ✅ ya NO reseteamos el timer al moverse
         shootTimer += delta;
+
         if (shootTimer >= SHOOT_COOLDOWN) {
             shootTimer = 0f;
-
             audio.playSfx(Assets.SFX_EXPLOSION_GRENADE);
-
             return true;
         }
         return false;
@@ -278,5 +283,23 @@ public class Tank {
     public float getX() { return x; }
     public float getY() { return y; }
     public float getWidth() { return width; }
+    public float getHeight() { return height; }
     public boolean isFacingRight() { return facingRight; }
+
+    // =========================================================
+    // ✅ NUEVO: punto de salida del disparo (para el BulletSystem)
+    // =========================================================
+    public float getMuzzleX() {
+        if (facingRight) {
+            return x + width * MUZZLE_X_RATIO;
+        } else {
+            return x + width * (1f - MUZZLE_X_RATIO);
+        }
+    }
+
+    public float getMuzzleY() {
+        // base visual del tanque (drawY) = y - FOOT_OFFSET
+        float drawY = y - FOOT_OFFSET;
+        return drawY + height * MUZZLE_Y_RATIO;
+    }
 }

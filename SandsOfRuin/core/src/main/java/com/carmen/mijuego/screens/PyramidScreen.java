@@ -10,7 +10,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-
+import com.carmen.mijuego.input.AccelerometerJumpDetector;
 import com.carmen.mijuego.Main;
 import com.carmen.mijuego.assets.Assets;
 import com.carmen.mijuego.characters.Ayla;
@@ -31,7 +31,8 @@ public class PyramidScreen implements Screen {
     private static final float WORLD_H = 720f;
 
     private static final float GROUND_Y = 90f;
-
+    // ✅ salto por acelerómetro
+    private final AccelerometerJumpDetector accelJump = new AccelerometerJumpDetector();
     private static final float INTRO_START_X = -260f;
     private static final float INTRO_TARGET_X = 220f;
     private static final float INTRO_WALK_SPEED = 280f;
@@ -67,6 +68,41 @@ public class PyramidScreen implements Screen {
     private static final float CURSE_TIME = 4.0f;
 
     private boolean pauseLatch = false;
+
+    // ✅ LÍMITE GLOBAL DE VIDAS
+    private static final int MAX_LIVES = 5;
+
+    // =========================
+    // ✅ ITEMS: CORAZONES EN SUELO
+    // =========================
+    private static final float HEART_W = 54f;
+    private static final float HEART_H = 54f;
+    private static final float HEART_Y = GROUND_Y + 8f;
+
+    // Posiciones en mundo (zona inicial jugable)
+    private static final float HEART1_WORLD_X = 520f;
+    private static final float HEART2_WORLD_X = 720f;
+
+    private Texture heartItemTex;
+    private final Array<HeartItem> heartItems = new Array<>();
+
+    private static class HeartItem {
+        float x, y, w, h;
+        boolean collected = false;
+        Rectangle bounds = new Rectangle();
+
+        HeartItem(float x, float y, float w, float h) {
+            this.x = x;
+            this.y = y;
+            this.w = w;
+            this.h = h;
+            bounds.set(x, y, w, h);
+        }
+
+        void updateBounds() {
+            bounds.set(x, y, w, h);
+        }
+    }
 
     private enum Phase {
         INTRO_ENTER,
@@ -123,7 +159,7 @@ public class PyramidScreen implements Screen {
         baseZoom = camera.zoom;
 
         ayla = new Ayla(
-            game.audio, // ✅ AÑADIR
+            game.audio,
             game.assets.get(Assets.AYLA_RUN),
             game.assets.get(Assets.AYLA_IDLE),
             game.assets.get(Assets.AYLA_JUMP),
@@ -133,6 +169,8 @@ public class PyramidScreen implements Screen {
             GROUND_Y
         );
 
+        // ✅ NO regalamos vidas aquí. Solo sincronizamos lo que traigas:
+        game.vidas = clampLives(game.vidas);
         ayla.setLives(game.vidas);
 
         controls = new Controls(game.audio, viewport,
@@ -165,6 +203,18 @@ public class PyramidScreen implements Screen {
             game.assets.get(Assets.HUD_HEART_FULL),
             game.assets.get(Assets.HUD_HEART_EMPTY)
         );
+
+        // ✅ textura del item corazón (reutilizamos el HUD full)
+        heartItemTex = game.assets.get(Assets.HUD_HEART_FULL);
+
+        // ✅ spawnea 2 corazones en el suelo
+        spawnStartHearts();
+    }
+
+    private void spawnStartHearts() {
+        heartItems.clear();
+        heartItems.add(new HeartItem(HEART1_WORLD_X, HEART_Y, HEART_W, HEART_H));
+        heartItems.add(new HeartItem(HEART2_WORLD_X, HEART_Y, HEART_W, HEART_H));
     }
 
     @Override
@@ -173,12 +223,18 @@ public class PyramidScreen implements Screen {
         Gdx.input.setInputProcessor(controls);
         controls.resetAll();
         pauseLatch = false;
+
+        // ✅ NUEVO
+        accelJump.reset();
+
+        // ✅ siempre sincroniza al entrar (sin sumar nada)
+        game.vidas = clampLives(game.vidas);
+        ayla.setLives(game.vidas);
     }
 
     @Override
     public void render(float delta) {
 
-        // ✅ inmunidad al reanudar (2s)
         if (resumeImmunity > 0f) {
             resumeImmunity -= delta;
             if (resumeImmunity < 0f) resumeImmunity = 0f;
@@ -197,8 +253,8 @@ public class PyramidScreen implements Screen {
             pauseLatch = true;
             controls.resetAll();
 
-            snapCameraOnResume = true;                 // ✅ snap al volver
-            resumeImmunity = RESUME_IMMUNITY_TIME;     // ✅ inmunidad 2s
+            snapCameraOnResume = true;
+            resumeImmunity = RESUME_IMMUNITY_TIME;
 
             ayla.stopAllLoops();
             game.setScreen(new PauseScreen(game, this, PauseScreen.Context.PYRAMID));
@@ -209,7 +265,6 @@ public class PyramidScreen implements Screen {
 
         updateLogic(delta);
 
-        // ✅ SNAP real (si updateLogic ha dejado la cámara “a medio ir”)
         if (snapCameraOnResume) {
             float targetCamX = scrollX + viewport.getWorldWidth() / 2f;
             camera.position.x = targetCamX;
@@ -227,6 +282,7 @@ public class PyramidScreen implements Screen {
 
         parallax.render(game.batch, camera, viewport.getWorldWidth(), viewport.getWorldHeight());
 
+        drawHeartItems();
         drawTreasure();
 
         if (mummy != null) mummy.draw(game.batch);
@@ -244,6 +300,10 @@ public class PyramidScreen implements Screen {
         livesHUD.draw(game.batch, camLeft, camTop, ayla.getLives(), phase == Phase.PLAY);
 
         if (phase == Phase.PLAY) {
+
+            // ✅ NUEVO: activar/desactivar UI según settings (oculta salto / baja granada)
+            controls.setAccelJumpEnabled(game.settings.isAccelJumpEnabled());
+
             controls.updateLayout(camera, viewport);
             controls.draw(
                 game.batch,
@@ -253,6 +313,51 @@ public class PyramidScreen implements Screen {
         }
 
         game.batch.end();
+    }
+
+    private void drawHeartItems() {
+        if (heartItemTex == null) return;
+        if (phase == Phase.INTRO_ENTER) return;
+
+        float vw = viewport.getWorldWidth();
+        float camLeft = camera.position.x - vw / 2f;
+        float camRight = camera.position.x + vw / 2f;
+
+        for (int i = 0; i < heartItems.size; i++) {
+            HeartItem it = heartItems.get(i);
+            if (it.collected) continue;
+
+            if (it.x + it.w < camLeft - 100f) continue;
+            if (it.x > camRight + 100f) continue;
+
+            game.batch.draw(heartItemTex, it.x, it.y, it.w, it.h);
+        }
+    }
+
+    private void updateHeartItems() {
+        if (phase != Phase.PLAY) return;
+
+        Rectangle aylaB = ayla.getBounds();
+
+        for (int i = 0; i < heartItems.size; i++) {
+            HeartItem it = heartItems.get(i);
+            if (it.collected) continue;
+
+            it.updateBounds();
+
+            if (aylaB.overlaps(it.bounds)) {
+                it.collected = true;
+
+                int before = ayla.getLives();
+                int after = clampLives(before + 1); // si estaba a 5, se queda en 5
+
+                ayla.setLives(after);
+                game.vidas = after;
+
+                // ✅ SFX al coger vida
+                game.audio.playSfx(Assets.SFX_LIVE);
+            }
+        }
     }
 
     private void applyDizzyCamera(float delta) {
@@ -316,13 +421,25 @@ public class PyramidScreen implements Screen {
 
         boolean grenadeKey = Gdx.input.isKeyJustPressed(Input.Keys.L);
 
+        // ✅ activar/desactivar UI según settings (oculta salto / baja granada)
+        boolean accelMode = game.settings.isAccelJumpEnabled();
+        controls.setAccelJumpEnabled(accelMode);
+
         boolean left  = leftKey  || controls.leftPressed;
         boolean right = rightKey || controls.rightPressed;
 
-        boolean jump  = jumpKey  || controls.jumpPressed;
         boolean shoot = shootKey || controls.shootPressed;
-
         boolean grenade = grenadeKey || controls.grenadePressed;
+
+// ✅ SALTO: si accelMode => acelerómetro; si no hay acelerómetro (PC) => fallback a normal
+        boolean jump;
+        if (accelMode) {
+            boolean accelJumpNow = accelJump.updateAndConsume(delta);
+            boolean fallbackJump = jumpKey || controls.jumpPressed; // para probar en PC
+            jump = accelJumpNow || fallbackJump;
+        } else {
+            jump = jumpKey || controls.jumpPressed;
+        }
 
         mummyHitCooldown -= delta;
         if (mummyHitCooldown < 0f) mummyHitCooldown = 0f;
@@ -380,9 +497,8 @@ public class PyramidScreen implements Screen {
             float targetCamX = scrollX + viewportW / 2f;
 
             if (snapCameraOnResume) {
-                camera.position.x = targetCamX; // ✅ PUM
+                camera.position.x = targetCamX;
                 camera.update();
-                // NO pongas snapCameraOnResume=false aquí, ya lo apago en render()
             } else {
                 camera.position.x += (targetCamX - camera.position.x) * 10f * delta;
                 camera.update();
@@ -395,6 +511,9 @@ public class PyramidScreen implements Screen {
 
             ayla.setX(camLeft + INTRO_TARGET_X);
             ayla.update(delta, left, right, jump, shoot, grenade, GROUND_Y, camLeft, camRight);
+
+            // ✅ recoger corazones
+            updateHeartItems();
 
             if (!mummySpawned && (scrollX - playStartScrollX) >= BOSS_SPAWN_AFTER_SCROLL) {
                 spawnMummyOutsideRight();
@@ -410,12 +529,12 @@ public class PyramidScreen implements Screen {
 
                 handleAylaVsMummyBody();
 
-                game.vidas = ayla.getLives();
+                game.vidas = clampLives(ayla.getLives());
+                ayla.setLives(game.vidas);
 
                 if (ayla.isDead()) {
-                    game.vidas = ayla.getLives();
+                    game.vidas = clampLives(ayla.getLives());
 
-                    // ✅ SFX game over (solo una vez aquí)
                     game.audio.playSfx(Assets.SFX_GAME_OVER);
 
                     ayla.stopAllLoops();
@@ -505,9 +624,8 @@ public class PyramidScreen implements Screen {
 
             if (ayla.getBounds().overlaps(treasureBounds)) {
                 phase = Phase.END;
-                game.vidas = ayla.getLives();
+                game.vidas = clampLives(ayla.getLives());
 
-                // ✅ SFX victoria (solo una vez aquí)
                 game.audio.playSfx(Assets.SFX_VICTORY);
 
                 ayla.stopAllLoops();
@@ -528,16 +646,21 @@ public class PyramidScreen implements Screen {
     private void handleAylaVsMummyBody() {
         if (mummy == null || mummy.isDead()) return;
         if (mummyHitCooldown > 0f) return;
-        if (resumeImmunity > 0f) return; // ✅ no daño durante 2s
+        if (resumeImmunity > 0f) return;
+
         if (ayla.getBounds().overlaps(mummy.getBounds())) {
             knockRemaining = KNOCKBACK_DISTANCE;
 
             boolean damaged = ayla.takeDamage();
+            if (damaged) ayla.applyCurse(CURSE_TIME);
+
             if (damaged) {
-                ayla.applyCurse(CURSE_TIME);
+                game.vibrateHit(120);
             }
 
-            game.vidas = ayla.getLives();
+            game.vidas = clampLives(ayla.getLives());
+            ayla.setLives(game.vidas);
+
             mummyHitCooldown = MUMMY_HIT_DELAY;
         }
     }
@@ -550,7 +673,7 @@ public class PyramidScreen implements Screen {
             Bullet b = bullets.get(i);
             if (!b.isAlive()) continue;
 
-            if (resumeImmunity > 0f) return; // ✅ no daño durante 2s
+            if (resumeImmunity > 0f) return;
 
             if (b.getBounds().overlaps(ayla.getBounds())) {
                 b.kill();
@@ -558,11 +681,14 @@ public class PyramidScreen implements Screen {
                 knockRemaining = KNOCKBACK_DISTANCE;
 
                 boolean damaged = ayla.takeDamage();
+                if (damaged) ayla.applyCurse(CURSE_TIME);
+
                 if (damaged) {
-                    ayla.applyCurse(CURSE_TIME);
+                    game.vibrateHit(120);
                 }
 
-                game.vidas = ayla.getLives();
+                game.vidas = clampLives(ayla.getLives());
+                ayla.setLives(game.vidas);
             }
         }
     }
@@ -583,7 +709,8 @@ public class PyramidScreen implements Screen {
         float camRight = camera.position.x + viewportW / 2f;
 
         float mummyX = camRight + MUMMY_SPAWN_OUTSIDE_PAD;
-        mummy = new Mummy(game.audio, mummyIdle, mummyWalk, mummyHurt, mummyDead, mummyX, GROUND_Y);    }
+        mummy = new Mummy(game.audio, mummyIdle, mummyWalk, mummyHurt, mummyDead, mummyX, GROUND_Y);
+    }
 
     private void handleAylaBulletsVsMummy() {
         if (mummy == null || mummy.isDead()) return;
@@ -595,7 +722,6 @@ public class PyramidScreen implements Screen {
 
             if (b.getBounds().overlaps(mummy.getBounds())) {
                 b.kill();
-
                 for (int d = 0; d < b.getDamage(); d++) {
                     mummy.hitByAylaBullet();
                 }
@@ -623,6 +749,12 @@ public class PyramidScreen implements Screen {
         int min = total / 60;
         int sec = total % 60;
         return String.format("%02d:%02d", min, sec);
+    }
+
+    private int clampLives(int v) {
+        if (v < 0) return 0;
+        if (v > MAX_LIVES) return MAX_LIVES;
+        return v;
     }
 
     @Override

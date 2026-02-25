@@ -3,14 +3,18 @@ package com.carmen.mijuego.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
 import com.carmen.mijuego.Main;
 import com.carmen.mijuego.assets.Assets;
 
@@ -18,74 +22,120 @@ public class OptionsScreen implements Screen {
 
     private final Main game;
 
-    private static final float WORLD_W = 1280f;
-    private static final float WORLD_H = 720f;
-
     private OrthographicCamera camera;
     private Viewport viewport;
 
+    private static final float WORLD_W = 1280f;
+    private static final float WORLD_H = 720f;
+
     private Texture bg;
+    private Texture switchOn;
+    private Texture switchOff;
+    private Texture switchEN;
+    private Texture switchES;
 
-    private BitmapFont fontTitle;
-    private BitmapFont fontMain;
-    private BitmapFont fontHint;
+    private Sound clickSound;
 
-    private GlyphLayout layout = new GlyphLayout();
+    private BitmapFont font;
+    private GlyphLayout layout;
+    private GlyphLayout backLayout;
 
-    private static final String TITLE = "OPCIONES";
-    private static final String HINT_TEXT = "Toca para volver";
-    private float blinkTime = 0f;
+    private boolean isSpanish;
+    private boolean accelJumpOn;
+    private boolean vibrationOn;
+    private boolean musicOn;
+    private boolean sfxOn;
 
-    // (por ahora texto fijo; cuando implementes switches, lo cambiamos a UI real)
-    private String optionsText;
+    private Rectangle langBounds;
+    private Rectangle accelJumpBounds;
+    private Rectangle vibrationBounds;
+    private Rectangle musicBounds;
+    private Rectangle sfxBounds;
+
+    private Rectangle backBounds;
+
+    private static final float SWITCH_W = 160f;
+    private static final float SWITCH_H = 80f;
+
+    private final Vector2 touch = new Vector2();
+
+    private float switchX;
+    private float textX;
+    private float startY;
+    private float spacing;
 
     public OptionsScreen(Main game) {
         this.game = game;
+    }
+
+    @Override
+    public void show() {
 
         camera = new OrthographicCamera();
         viewport = new FitViewport(WORLD_W, WORLD_H, camera);
         viewport.apply(true);
 
-        camera.position.set(WORLD_W / 2f, WORLD_H / 2f, 0f);
+        camera.position.set(WORLD_W / 2f, WORLD_H / 2f, 0);
         camera.update();
 
-        // ✅ Fondo options desde AssetManager
         bg = game.assets.get(Assets.SCREEN_OPTIONS_BG);
+        switchOn = game.assets.get(Assets.SWITCH_ON);
+        switchOff = game.assets.get(Assets.SWITCH_OFF);
+        switchEN = game.assets.get(Assets.SWITCH_EN);
+        switchES = game.assets.get(Assets.SWITCH_ES);
 
-        fontTitle = new BitmapFont();
-        fontTitle.getData().setScale(4.0f);
+        clickSound = game.assets.get(Assets.SFX_BUTTON_CLICKED);
 
-        fontMain = new BitmapFont();
-        fontMain.getData().setScale(2.0f);
+        font = new BitmapFont();
+        layout = new GlyphLayout();
+        backLayout = new GlyphLayout();
 
-        fontHint = new BitmapFont();
-        fontHint.getData().setScale(1.6f);
+        // Cargar estados desde settings
+        isSpanish = game.settings.isLangSpanish();
+        accelJumpOn = game.settings.isAccelJumpEnabled();
+        vibrationOn = game.settings.isVibrationEnabled();
+        musicOn = game.settings.isMusicEnabled();
+        sfxOn = game.settings.isSfxEnabled();
 
-        optionsText =
-            "Aqui iran las opciones del juego:\n\n" +
-                "- Sonido: ON/OFF\n" +
-                "- Musica: ON/OFF\n" +
-                "- Vibracion: ON/OFF\n" +
-                "- Giroscopio: ON/OFF\n";
+        spacing = 85f;
+
+        float centerX = WORLD_W / 2f;
+
+        float offsetLeft = 80f;
+
+        switchX = centerX - 180f - offsetLeft;
+        textX = centerX - 10f - offsetLeft;
+
+        startY = WORLD_H - 230f;
+
+        // Filas (sin "gyro")
+        langBounds = new Rectangle(switchX, startY, SWITCH_W, SWITCH_H);
+        accelJumpBounds = new Rectangle(switchX, startY - spacing, SWITCH_W, SWITCH_H);
+        vibrationBounds = new Rectangle(switchX, startY - spacing * 2f, SWITCH_W, SWITCH_H);
+        musicBounds = new Rectangle(switchX, startY - spacing * 3f, SWITCH_W, SWITCH_H);
+        sfxBounds = new Rectangle(switchX, startY - spacing * 4f, SWITCH_W, SWITCH_H);
+
+        backBounds = new Rectangle();
+        updateBackBounds();
     }
 
-    @Override
-    public void show() {
-        // Si tienes música propia:
-        game.audio.playMusic(Assets.MUS_CONFIG_THEME, true);
+    private void updateBackBounds() {
+        font.getData().setScale(1.7f);
+        String txt = game.i18n.t("options.back");
+        backLayout.setText(font, txt);
+        float x = 60f;
+        float y = 60f;
+        backBounds.set(x, y - backLayout.height, backLayout.width, backLayout.height);
+        font.getData().setScale(1f);
     }
 
     @Override
     public void render(float delta) {
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) ||
-            Gdx.input.isKeyJustPressed(Input.Keys.BACK) ||
-            Gdx.input.justTouched()) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.isKeyJustPressed(Input.Keys.BACK)) {
             game.setScreen(new MenuScreen(game));
             return;
         }
-
-        blinkTime += delta;
 
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -95,37 +145,134 @@ public class OptionsScreen implements Screen {
 
         game.batch.begin();
 
-        // Fondo
         game.batch.draw(bg, 0, 0, WORLD_W, WORLD_H);
 
         // Título
-        float titleY = WORLD_H - 120f;
-        fontTitle.draw(game.batch, TITLE, 0, titleY, WORLD_W, Align.center, false);
+        font.setColor(Color.WHITE);
+        font.getData().setScale(3.0f);
+        layout.setText(font, game.i18n.t("options.title"));
+        font.draw(game.batch, layout, (WORLD_W - layout.width) / 2f, WORLD_H - 60f);
 
-        // Texto principal centrado
-        layout.setText(fontMain, optionsText, com.badlogic.gdx.graphics.Color.WHITE, WORLD_W * 0.8f, Align.center, true);
-        float mainY = WORLD_H / 2f + layout.height / 2f - 40f;
+        // Texto negro y más grande
+        font.setColor(Color.BLACK);
+        font.getData().setScale(2.3f);
 
-        fontMain.draw(game.batch, optionsText, 0, mainY, WORLD_W, Align.center, true);
+        drawRow(game.i18n.t("options.lang"), langBounds);
+        drawRow(game.i18n.t("options.accelJump"), accelJumpBounds);
+        drawRow(game.i18n.t("options.vibration"), vibrationBounds);
+        drawRow(game.i18n.t("options.music"), musicBounds);
+        drawRow(game.i18n.t("options.sfx"), sfxBounds);
 
-        // Hint parpadeando abajo
-        float alpha = 0.4f + 0.6f * (0.5f + 0.5f * (float)Math.sin(blinkTime * 4f));
-        fontHint.setColor(1f, 1f, 1f, alpha);
-        fontHint.draw(game.batch, HINT_TEXT, 0, 60f, WORLD_W, Align.center, false);
-        fontHint.setColor(1f, 1f, 1f, 1f);
+        // Switches
+        if (isSpanish) game.batch.draw(switchES, langBounds.x, langBounds.y, SWITCH_W, SWITCH_H);
+        else game.batch.draw(switchEN, langBounds.x, langBounds.y, SWITCH_W, SWITCH_H);
+
+        if (accelJumpOn) game.batch.draw(switchOn, accelJumpBounds.x, accelJumpBounds.y, SWITCH_W, SWITCH_H);
+        else game.batch.draw(switchOff, accelJumpBounds.x, accelJumpBounds.y, SWITCH_W, SWITCH_H);
+
+        if (vibrationOn) game.batch.draw(switchOn, vibrationBounds.x, vibrationBounds.y, SWITCH_W, SWITCH_H);
+        else game.batch.draw(switchOff, vibrationBounds.x, vibrationBounds.y, SWITCH_W, SWITCH_H);
+
+        if (musicOn) game.batch.draw(switchOn, musicBounds.x, musicBounds.y, SWITCH_W, SWITCH_H);
+        else game.batch.draw(switchOff, musicBounds.x, musicBounds.y, SWITCH_W, SWITCH_H);
+
+        if (sfxOn) game.batch.draw(switchOn, sfxBounds.x, sfxBounds.y, SWITCH_W, SWITCH_H);
+        else game.batch.draw(switchOff, sfxBounds.x, sfxBounds.y, SWITCH_W, SWITCH_H);
+
+        // Volver al menú
+        font.getData().setScale(1.7f);
+        font.setColor(Color.BLACK);
+        String backTxt = game.i18n.t("options.back");
+        backLayout.setText(font, backTxt);
+        font.draw(game.batch, backLayout, backBounds.x, backBounds.y + backBounds.height);
 
         game.batch.end();
+
+        handleInput();
     }
 
-    @Override public void resize(int width, int height) { viewport.update(width, height, true); }
+    private void drawRow(String text, Rectangle bounds) {
+        layout.setText(font, text);
+        float textY = bounds.y + (SWITCH_H / 2f) + (layout.height / 2f);
+        font.draw(game.batch, layout, textX, textY);
+    }
+
+    private void handleInput() {
+
+        if (!Gdx.input.justTouched()) return;
+
+        touch.set(Gdx.input.getX(), Gdx.input.getY());
+        viewport.unproject(touch);
+
+        if (backBounds.contains(touch.x, touch.y)) {
+            if (sfxOn) clickSound.play();
+            game.setScreen(new MenuScreen(game));
+            return;
+        }
+
+        if (langBounds.contains(touch.x, touch.y)) {
+            isSpanish = !isSpanish;
+            applyAndSave();
+            return;
+        }
+
+        if (accelJumpBounds.contains(touch.x, touch.y)) {
+            accelJumpOn = !accelJumpOn;
+            applyAndSave();
+            return;
+        }
+
+        if (vibrationBounds.contains(touch.x, touch.y)) {
+            vibrationOn = !vibrationOn;
+            applyAndSave();
+            return;
+        }
+
+        if (musicBounds.contains(touch.x, touch.y)) {
+            musicOn = !musicOn;
+            applyAndSave();
+            return;
+        }
+
+        if (sfxBounds.contains(touch.x, touch.y)) {
+            sfxOn = !sfxOn;
+            applyAndSave();
+        }
+    }
+
+    private void applyAndSave() {
+
+        // Click solo si SFX está ON
+        if (sfxOn) clickSound.play();
+
+        // Guardar en settings
+        game.settings.setLangSpanish(isSpanish);
+        game.settings.setAccelJumpEnabled(accelJumpOn);
+        game.settings.setVibrationEnabled(vibrationOn);
+        game.settings.setMusicEnabled(musicOn);
+        game.settings.setSfxEnabled(sfxOn);
+        game.settings.save();
+
+        // Aplicar efectos inmediatos
+        if (!musicOn) {
+            game.audio.stopMusic();
+        }
+
+        updateBackBounds();
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        viewport.update(width, height, true);
+        updateBackBounds();
+    }
+
     @Override public void pause() {}
     @Override public void resume() {}
     @Override public void hide() {}
 
     @Override
     public void dispose() {
-        fontTitle.dispose();
-        fontMain.dispose();
-        fontHint.dispose();
+        font.dispose();
     }
 }

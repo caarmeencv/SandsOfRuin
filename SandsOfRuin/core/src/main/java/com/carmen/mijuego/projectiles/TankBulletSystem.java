@@ -4,8 +4,6 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
 
-import com.carmen.mijuego.assets.Assets;
-import com.carmen.mijuego.audio.AudioManager;
 import com.carmen.mijuego.enemies.Tank;
 
 /**
@@ -22,16 +20,10 @@ public class TankBulletSystem {
     private static final float TANK_BULLET_H = 45f;
     private static final float TANK_BULLET_SPEED = 700f;
 
-    // Ajustes del "muzzle"
-    private static final float TANK_MUZZLE_Y = 200f;      // altura del cañón
-    private static final float TANK_MUZZLE_INSET_X = 70f; // spawn dentro del sprite
-
-    private final AudioManager audio;          // ✅ NUEVO
     private final Texture bulletTexture;
     private final Array<Bullet> bullets = new Array<>();
 
-    public TankBulletSystem(AudioManager audio, Texture bulletTexture) {
-        this.audio = audio;
+    public TankBulletSystem(Texture bulletTexture) {
         this.bulletTexture = bulletTexture;
     }
 
@@ -44,28 +36,26 @@ public class TankBulletSystem {
             // seguridad por si el tank ya está muerto/gone
             if (t.isDead() || t.isDestroying() || t.isGone()) continue;
 
-            // SOLO dispara si está parado (idle)
+            // ✅ ahora puede disparar tanto en MOVE como en IDLE (lo decide Tank.canShoot)
             if (!t.canShoot(delta)) continue;
-
-            // ✅ SONIDO disparo tanque
-            if (audio != null) audio.playSfx(Assets.SFX_EXPLOSION_GRENADE);
 
             boolean right = t.isFacingRight();
 
-            float muzzleX;
-            if (right) {
-                muzzleX = (t.getX() + t.getWidth()) - TANK_MUZZLE_INSET_X;
-            } else {
-                muzzleX = t.getX() + TANK_MUZZLE_INSET_X - TANK_BULLET_W;
-            }
+            // ✅ usar muzzle real del Tank (más abajo y bien colocado)
+            float muzzleX = t.getMuzzleX();
+            float muzzleY = t.getMuzzleY();
 
-            float muzzleY = t.getY() + TANK_MUZZLE_Y;
+            // centramos un poco la bala respecto al cañón
+            // (si la quieres aún más baja, baja MUZZLE_Y_RATIO en Tank)
+            float spawnX = right ? muzzleX : (muzzleX - TANK_BULLET_W);
+            float spawnY = muzzleY - (TANK_BULLET_H * 0.35f);
+
             float velX = right ? TANK_BULLET_SPEED : -TANK_BULLET_SPEED;
 
             bullets.add(new Bullet(
                 bulletTexture,
-                muzzleX,
-                muzzleY,
+                spawnX,
+                spawnY,
                 velX,
                 TANK_BULLET_W,
                 TANK_BULLET_H

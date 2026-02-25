@@ -51,7 +51,6 @@ public class VictoryScreen implements Screen {
 
     @Override
     public void show() {
-        // Música de victoria
         game.audio.playMusic(Assets.MUS_VICTORY_THEME, true);
     }
 
@@ -76,7 +75,7 @@ public class VictoryScreen implements Screen {
 
         game.batch.draw(background, 0, 0, WORLD_W, WORLD_H);
 
-        String text = "Toca para volver al menu\nPulsa ESC para volver al menu";
+        String text = game.i18n.t("ui.back_to_menu_hint");
         layout.setText(font, text);
 
         float x = (WORLD_W - layout.width) / 2f;

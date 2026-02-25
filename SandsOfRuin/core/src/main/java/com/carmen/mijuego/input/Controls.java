@@ -59,6 +59,9 @@ public class Controls implements InputProcessor {
 
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
 
+    // ✅ NUEVO: modo salto por acelerómetro (sin botón de salto)
+    private boolean accelJumpEnabled = false;
+
     public Controls(AudioManager audio,
                     Viewport viewport,
                     Texture left, Texture right, Texture jump,
@@ -76,6 +79,21 @@ public class Controls implements InputProcessor {
         font.getData().setScale(3f);
     }
 
+    /** Activa/desactiva el salto por acelerómetro (oculta botón salto y baja granada). */
+    public void setAccelJumpEnabled(boolean enabled) {
+        this.accelJumpEnabled = enabled;
+
+        // Por si estaba pulsado el botón de salto y lo desactivas en caliente
+        if (enabled) {
+            jumpPressed = false;
+            jumpPointer = -1;
+        }
+    }
+
+    public boolean isAccelJumpEnabled() {
+        return accelJumpEnabled;
+    }
+
     public void setCounterText(String text) {
         this.counterText = text;
     }
@@ -90,7 +108,6 @@ public class Controls implements InputProcessor {
         float camTop    = cam.position.y + worldH / 2f;
 
         float size = worldH * 0.125f;
-
         float gap  = worldH * 0.020f;
 
         float safePadX = worldW * 0.03f;
@@ -103,14 +120,24 @@ public class Controls implements InputProcessor {
         float bottomY = camBottom + safePadY + bottomRaise;
 
         rLeft.set(camLeft + safePadX, bottomY, size, size);
-
         rRight.set(rLeft.x + size + gap, bottomY, size, size);
 
-        rJump.set(camRight - safePadX - size, bottomY, size, size);
+        // Base derecha (posición del salto)
+        float rightSlotX = camRight - safePadX - size;
 
-        rShoot.set(rJump.x - gap - size, bottomY, size, size);
+        // Disparo siempre a la izquierda del “slot derecho”
+        rShoot.set(rightSlotX - gap - size, bottomY, size, size);
 
-        rGrenade.set(rJump.x, bottomY + size + gap, size, size);
+        if (!accelJumpEnabled) {
+            // NORMAL: salto abajo derecha, granada arriba del salto
+            rJump.set(rightSlotX, bottomY, size, size);
+            rGrenade.set(rightSlotX, bottomY + size + gap, size, size);
+
+        } else {
+            // ✅ ACEL: NO hay botón salto, granada baja al slot del salto
+            rJump.set(0, 0, 0, 0); // fuera
+            rGrenade.set(rightSlotX, bottomY, size, size);
+        }
 
         float pauseSize = size * 0.82f;
         float pauseX = camRight - pausePadX - pauseSize;
@@ -145,7 +172,12 @@ public class Controls implements InputProcessor {
 
         drawButton(batch, left, rLeft, leftPressed);
         drawButton(batch, right, rRight, rightPressed);
-        drawButton(batch, jump, rJump, jumpPressed);
+
+        // ✅ si accelJumpEnabled => no dibujar salto
+        if (!accelJumpEnabled) {
+            drawButton(batch, jump, rJump, jumpPressed);
+        }
+
         drawButton(batch, shoot, rShoot, shootPressed);
         drawButton(batch, grenade, rGrenade, grenadePressed);
         drawButton(batch, pause, rPause, pausePressed);
@@ -172,6 +204,7 @@ public class Controls implements InputProcessor {
     }
 
     private void drawButton(SpriteBatch batch, Texture tex, Rectangle r, boolean pressed) {
+        if (r.width <= 0f || r.height <= 0f) return;
         if (pressed) batch.setColor(PRESSED_TINT, PRESSED_TINT, PRESSED_TINT, 1f);
         batch.draw(tex, r.x, r.y, r.width, r.height);
         if (pressed) batch.setColor(1f, 1f, 1f, 1f);
@@ -205,11 +238,14 @@ public class Controls implements InputProcessor {
             rightPressed = true;
             return true;
         }
-        if (jumpPointer == -1 && rJump.contains(touch)) {
+
+        // ✅ salto solo si NO está activado el acelerómetro
+        if (!accelJumpEnabled && jumpPointer == -1 && rJump.contains(touch)) {
             jumpPointer = pointer;
             jumpPressed = true;
             return true;
         }
+
         if (shootPointer == -1 && rShoot.contains(touch)) {
             shootPointer = pointer;
             shootPressed = true;
@@ -249,7 +285,10 @@ public class Controls implements InputProcessor {
         if (keycode == Input.Keys.A) leftPressed = true;
         if (keycode == Input.Keys.D) rightPressed = true;
 
-        if (keycode == Input.Keys.W || keycode == Input.Keys.SPACE) jumpPressed = true;
+        // ✅ teclado: si accelJumpEnabled, ignoramos salto por tecla
+        if (!accelJumpEnabled) {
+            if (keycode == Input.Keys.W || keycode == Input.Keys.SPACE) jumpPressed = true;
+        }
 
         if (keycode == Input.Keys.K) shootPressed = true;
         if (keycode == Input.Keys.L) grenadePressed = true;
@@ -268,7 +307,9 @@ public class Controls implements InputProcessor {
         if (keycode == Input.Keys.A) leftPressed = false;
         if (keycode == Input.Keys.D) rightPressed = false;
 
-        if (keycode == Input.Keys.W || keycode == Input.Keys.SPACE) jumpPressed = false;
+        if (!accelJumpEnabled) {
+            if (keycode == Input.Keys.W || keycode == Input.Keys.SPACE) jumpPressed = false;
+        }
 
         if (keycode == Input.Keys.K) shootPressed = false;
         if (keycode == Input.Keys.L) grenadePressed = false;

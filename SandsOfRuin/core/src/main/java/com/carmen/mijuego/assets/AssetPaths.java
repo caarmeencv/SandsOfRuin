@@ -130,6 +130,11 @@ public final class AssetPaths {
     public static final String PAUSE_BTN_MENU     = "screens/pause/MenuButton.png";
     public static final String PAUSE_BTN_RESET    = "screens/pause/ResetButton.png";
 
+    // ===== OPTIONS SWITCHES =====
+    public static final String SWITCH_ON  = "screens/options/switch_ON.png";
+    public static final String SWITCH_OFF = "screens/options/switch_OFF.png";
+    public static final String SWITCH_EN  = "screens/options/switch_EN.png";
+    public static final String SWITCH_ES  = "screens/options/switch_ES.png";
     public static final String SFX_AYLA_JUMP      = "audio/effects/AylaJump.mp3";
     public static final String SFX_BUTTON_CLICKED = "audio/effects/ButtonClicked.mp3";
     public static final String SFX_CHARACTER_RUN  = "audio/effects/CharacterRun.mp3";

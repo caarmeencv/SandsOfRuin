@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
 import com.carmen.mijuego.Main;
 import com.carmen.mijuego.assets.Assets;
 
@@ -40,7 +41,6 @@ public class IntroScreen implements Screen {
         camera.position.set(WORLD_W / 2f, WORLD_H / 2f, 0f);
         camera.update();
 
-        // ✅ AssetManager
         introImage = game.assets.get(Assets.SCREEN_INTRO);
 
         font = new BitmapFont();
@@ -50,7 +50,6 @@ public class IntroScreen implements Screen {
 
     @Override
     public void show() {
-        // ✅ Empieza aquí y seguirá en el menú sin reiniciar
         game.audio.playMusic(Assets.MUS_INTRO_THEME, true);
     }
 
@@ -61,6 +60,7 @@ public class IntroScreen implements Screen {
         if (Gdx.input.justTouched()
             || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
             || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+
             game.setScreen(new MenuScreen(game));
             return;
         }
@@ -76,7 +76,7 @@ public class IntroScreen implements Screen {
 
         boolean visible = (blinkTime % 1f) < 0.5f;
         if (visible) {
-            String text = "TOCA PARA CONTINUAR";
+            String text = game.i18n.t("intro.tap");
             layout.setText(font, text);
 
             float x = (WORLD_W - layout.width) / 2f;
@@ -99,7 +99,6 @@ public class IntroScreen implements Screen {
 
     @Override
     public void dispose() {
-        // ❌ NO disposes introImage (es del AssetManager)
         font.dispose();
     }
 }

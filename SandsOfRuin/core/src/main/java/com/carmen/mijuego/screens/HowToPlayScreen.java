@@ -55,23 +55,20 @@ public class HowToPlayScreen implements Screen {
         camera.position.set(WORLD_W / 2f, WORLD_H / 2f, 0f);
         camera.update();
 
-        // ✅ Fondo desde AssetManager
         bg = game.assets.get(Assets.SCREEN_HOWTOPLAY_BG);
 
-        // Fuentes
         fontTitle = new BitmapFont();
         fontTitle.setColor(Color.WHITE);
         fontTitle.getData().setScale(2.6f);
 
         fontBody = new BitmapFont();
         fontBody.setColor(Color.WHITE);
-        fontBody.getData().setScale(1.8f); // base (grande)
+        fontBody.getData().setScale(1.8f);
 
         fontFooter = new BitmapFont();
         fontFooter.setColor(Color.WHITE);
         fontFooter.getData().setScale(1.35f);
 
-        // Layouts
         layoutTitle = new GlyphLayout();
         layoutLeft = new GlyphLayout();
         layoutRight = new GlyphLayout();
@@ -97,32 +94,25 @@ public class HowToPlayScreen implements Screen {
     }
 
     private void updateFooterRects() {
-        // Se calculan con el tamaño real del texto (layout.width/height)
         float tapX = (WORLD_W - layoutTapBack.width) / 2f;
-        float tapY = 95f; // baseline del texto
-
-        // Rectangle en coords mundo: x,y es esquina inferior izquierda
+        float tapY = 95f;
         rTapBack.set(tapX, tapY - layoutTapBack.height, layoutTapBack.width, layoutTapBack.height);
 
         float keyX = (WORLD_W - layoutKeyBack.width) / 2f;
         float keyY = 65f;
-
         rKeyBack.set(keyX, keyY - layoutKeyBack.height, layoutKeyBack.width, layoutKeyBack.height);
     }
 
     @Override
     public void render(float delta) {
 
-        // ESC / BACK siempre vuelve
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.isKeyJustPressed(Input.Keys.BACK)) {
             goBack();
             return;
         }
 
-        // Actualiza hover de textos clicables
         updatePointer();
 
-        // Click / toque en textos de volver
         if (Gdx.input.justTouched()) {
             if (hoverTapBack || hoverKeyBack) {
                 goBack();
@@ -136,38 +126,9 @@ public class HowToPlayScreen implements Screen {
         viewport.apply();
         game.batch.setProjectionMatrix(camera.combined);
 
-        // ---- TEXTOS ----
-        String leftText =
-            "CONTROLES MOVIL:\n" +
-                " Flechas: moverse\n" +
-                " Flecha arriba: saltar (DOBLE SALTO)\n" +
-                " Agitar movil: saltar (activar en Ajustes)\n" +
-                " Pistola: disparo normal\n" +
-                " Bomba: especial (2 disparos, cooldown)\n\n" +
+        String leftText = game.i18n.t("howto.left");
+        String rightText = game.i18n.t("howto.right");
 
-                "CONTROLES ORDENADOR:\n" +
-                " A / D: moverse\n" +
-                " ESPACIO o W: saltar\n" +
-                " K: disparar\n" +
-                " L: especial\n\n" +
-
-                "COMBATE:\n" +
-                " Soldado: 2 disparos\n" +
-                " Tanque: 3 disparos\n" +
-                " Momia: 5 disparos\n" +
-                " Cactus: no se destruyen";
-
-        String rightText =
-            "OBJETIVO:\n\n" +
-                "Avanza por el desierto\n" +
-                "superando enemigos y\n" +
-                "obstaculos.\n\n" +
-                "Llega a la piramide\n" +
-                "y derrota a la momia\n" +
-                "para conseguir\n" +
-                "el tesoro.";
-
-        // ---- LAYOUT (2 columnas) ----
         float margin = 100f;
         float columnGap = 60f;
         float columnW = (WORLD_W - margin * 2f - columnGap) / 2f;
@@ -175,15 +136,13 @@ public class HowToPlayScreen implements Screen {
         float leftX = margin;
         float rightX = margin + columnW + columnGap;
 
-        float topY = 590f; // debajo del título
-        float bottomLimit = 130f; // zona del pie
+        float topY = 590f;
+        float bottomLimit = 130f;
         float availableH = topY - bottomLimit;
 
-        // Título
-        layoutTitle.setText(fontTitle, "COMO JUGAR");
+        layoutTitle.setText(fontTitle, game.i18n.t("howto.title"));
 
-        // Ajuste automático del tamaño del cuerpo: si no cabe, baja un poco
-        float scale = 1.9f; // empieza grande
+        float scale = 1.9f;
         for (int i = 0; i < 8; i++) {
             fontBody.getData().setScale(scale);
 
@@ -196,45 +155,33 @@ public class HowToPlayScreen implements Screen {
             scale -= 0.10f;
         }
 
-        // Footer (clicable)
         fontFooter.getData().setScale(1.45f);
-        String tapBack = hoverTapBack ? "TOCA AQUI PARA VOLVER" : "Toca aqui para volver";
+        String tapBack = hoverTapBack ? game.i18n.t("howto.tap.hover") : game.i18n.t("howto.tap.normal");
         layoutTapBack.setText(fontFooter, tapBack);
 
         fontFooter.getData().setScale(1.20f);
-        String keyBack = hoverKeyBack ? "PULSA ESC / ATRAS PARA VOLVER" : "Pulsa ESC / Atras para volver";
+        String keyBack = hoverKeyBack ? game.i18n.t("howto.key.hover") : game.i18n.t("howto.key.normal");
         layoutKeyBack.setText(fontFooter, keyBack);
 
-        // Actualizar rectángulos clicables del footer
         updateFooterRects();
 
-        // ---- DIBUJO ----
         game.batch.begin();
 
-        // Fondo
         game.batch.draw(bg, 0, 0, WORLD_W, WORLD_H);
 
-        // Título centrado
         fontTitle.draw(game.batch, layoutTitle, (WORLD_W - layoutTitle.width) / 2f, 665f);
 
-        // Columna izquierda (texto grande)
         fontBody.draw(game.batch, layoutLeft, leftX, topY);
-
-        // Columna derecha (objetivo)
         fontBody.draw(game.batch, layoutRight, rightX, topY);
 
-        // Footer (clicable)
-        // Tap back
         fontFooter.getData().setScale(1.45f);
         fontFooter.setColor(hoverTapBack ? Color.WHITE : Color.LIGHT_GRAY);
         fontFooter.draw(game.batch, layoutTapBack, (WORLD_W - layoutTapBack.width) / 2f, 95f);
 
-        // Key back
         fontFooter.getData().setScale(1.20f);
         fontFooter.setColor(hoverKeyBack ? Color.WHITE : Color.LIGHT_GRAY);
         fontFooter.draw(game.batch, layoutKeyBack, (WORLD_W - layoutKeyBack.width) / 2f, 65f);
 
-        // restaurar color por si acaso
         fontFooter.setColor(Color.WHITE);
 
         game.batch.end();
@@ -254,6 +201,5 @@ public class HowToPlayScreen implements Screen {
         fontTitle.dispose();
         fontBody.dispose();
         fontFooter.dispose();
-        // bg NO se dispone aquí (AssetManager lo gestiona)
     }
 }
