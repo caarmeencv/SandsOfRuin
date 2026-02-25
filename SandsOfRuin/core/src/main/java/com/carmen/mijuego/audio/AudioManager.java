@@ -23,7 +23,6 @@ public class AudioManager {
         this.assets = assets;
     }
 
-    // ===================== MUSIC =====================
     public void playMusic(AssetDescriptor<Music> musicDesc, boolean looping) {
         if (!musicEnabled) return;
 
@@ -69,7 +68,6 @@ public class AudioManager {
         return musicEnabled;
     }
 
-    // ===================== SFX =====================
     public void playSfx(AssetDescriptor<Sound> sfxDesc) {
         if (!sfxEnabled) return;
 
@@ -81,7 +79,6 @@ public class AudioManager {
         }
     }
 
-    /** Para sonidos continuos (correr, motor tanque, gruñidos momia). Devuelve id de loop. */
     public long loopSfx(AssetDescriptor<Sound> sfxDesc, float volumeMultiplier) {
         if (!sfxEnabled) return -1;
 
@@ -95,7 +92,6 @@ public class AudioManager {
         }
     }
 
-    /** Para parar un loop concreto (el id devuelto por loopSfx). */
     public void stopLoop(AssetDescriptor<Sound> sfxDesc, long loopId) {
         if (loopId == -1) return;
 
@@ -107,7 +103,6 @@ public class AudioManager {
         }
     }
 
-    /** (Opcional) Para cortar TODO el sonido SFX de golpe. */
     public void stopAllSfx() {
         // Esto para todos los sonidos reproducidos por TODOS los Sound cargados.
         // Úsalo solo si quieres un "mute hard".
@@ -122,9 +117,7 @@ public class AudioManager {
     public void setSfxEnabled(boolean enabled) {
         sfxEnabled = enabled;
 
-        // ✅ Importante: si desactivas SFX mientras hay loops sonando,
-        // esos loops NO se paran solos. Lo ideal es que cada entidad pare sus loops.
-        // Aquí no podemos pararlos por id porque cada entidad guarda su id.
+
     }
 
     public boolean isSfxEnabled() {

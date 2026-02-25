@@ -24,22 +24,17 @@ public class Tank {
     private static final float MOVE_SPEED = 230f;
     private static final float STOP_DISTANCE = 520f;
 
-    // Vida
     private static final int HP = 3;
     private int hitsTaken = 0;
 
-    // Dibujo
     private static final float FOOT_OFFSET = 10f;
 
-    // Animación
     private static final float MOVE_FRAME_TIME = 0.10f;
     private static final float DESTROY_FRAME_TIME = 0.06f;
 
-    // Disparo (cooldown)
     private static final float SHOOT_COOLDOWN = 2.2f;
     private float shootTimer = 0f;
 
-    // Blink dead
     private static final int BLINK_TIMES = 3;
     private static final float BLINK_INTERVAL = 0.10f;
     private float blinkTimer = 0f;
@@ -63,7 +58,6 @@ public class Tank {
 
     private final Rectangle bounds = new Rectangle();
 
-    // SFX continuo motor
     private long moveLoopId = -1;
 
     public Tank(AudioManager audio,
@@ -116,7 +110,6 @@ public class Tank {
             return;
         }
 
-        // DESTROY: cuando termina animación -> DEAD blink
         if (state == State.DESTROY) {
             stopMoveLoop();
             if (destroyAnim.isAnimationFinished(stateTime)) {
@@ -126,7 +119,6 @@ public class Tank {
             return;
         }
 
-        // DEAD: blink y luego GONE
         if (state == State.DEAD) {
             stopMoveLoop();
             blinkTimer += delta;
@@ -143,7 +135,6 @@ public class Tank {
             return;
         }
 
-        // MOVE / IDLE normal
         facingRight = aylaX > x;
 
         float dx = aylaX - x;
@@ -157,7 +148,6 @@ public class Tank {
             float dir = dx > 0 ? 1f : -1f;
             x += dir * MOVE_SPEED * delta;
 
-            // ✅ tanque avanza -> TankMove (loop)
             startMoveLoop();
         }
 
@@ -177,11 +167,9 @@ public class Tank {
         }
     }
 
-    /** Llamar 1 vez por frame. Si devuelve true, dispara (en TankBulletSystem). */
     public boolean canShoot(float delta) {
         if (state == State.DEAD || state == State.DESTROY || state == State.GONE) return false;
 
-        // ✅ SOLO DISPARA PARADO
         if (state != State.IDLE) {
             shootTimer = 0f;
             return false;
@@ -191,7 +179,6 @@ public class Tank {
         if (shootTimer >= SHOOT_COOLDOWN) {
             shootTimer = 0f;
 
-            // ✅ tanque dispara -> ExplosionGrenade
             audio.playSfx(Assets.SFX_EXPLOSION_GRENADE);
 
             return true;
@@ -207,10 +194,8 @@ public class Tank {
             state = State.DESTROY;
             stateTime = 0f;
 
-            // ✅ tanque muere -> ExplosionTank (al iniciar destrucción)
             audio.playSfx(Assets.SFX_EXPLOSION_TANK);
 
-            // ✅ sin hitbox durante DESTROY
             bounds.set(0, 0, 0, 0);
         }
     }

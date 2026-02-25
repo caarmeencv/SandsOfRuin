@@ -18,15 +18,12 @@ public class Bullet {
 
     private boolean alive = true;
 
-    // ✅ NUEVO: daño (normal=1, especial=2, etc.)
     private final int damage;
 
-    /** Constructor normal (compatibilidad). Daño = 1 */
     public Bullet(Texture texture, float startX, float startY, float velX, float width, float height) {
         this(texture, startX, startY, velX, width, height, 1);
     }
 
-    /** Constructor con daño */
     public Bullet(Texture texture, float startX, float startY, float velX, float width, float height, int damage) {
         this.texture = texture;
         this.x = startX;
@@ -39,12 +36,11 @@ public class Bullet {
     }
 
     public void update(float delta) {
-        x += velX * delta; // ✅ dirección real
+        x += velX * delta;
         updateBounds();
     }
 
     public void draw(SpriteBatch batch) {
-        // ✅ FLIP VISUAL: si va a la izquierda, dibujar espejo
         if (velX >= 0) {
             batch.draw(texture, x, y, width, height);
         } else {
@@ -76,7 +72,6 @@ public class Bullet {
         return velX;
     }
 
-    // ✅ NUEVO
     public int getDamage() {
         return damage;
     }

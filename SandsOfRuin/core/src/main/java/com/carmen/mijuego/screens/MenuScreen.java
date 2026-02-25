@@ -70,7 +70,7 @@ public class MenuScreen implements Screen {
         layout = new GlyphLayout();
 
         updateLayout();
-        updateHowToLayout(); // ✅ NUEVO
+        updateHowToLayout();
     }
 
     private void updateLayout() {
@@ -133,7 +133,6 @@ public class MenuScreen implements Screen {
         hoverCredits = rCredits.contains(pointerWorld);
         hoverAchievements = rAchievements.contains(pointerWorld);
 
-        // ✅ NUEVO
         hoverHowTo = rHowTo.contains(pointerWorld);
     }
 

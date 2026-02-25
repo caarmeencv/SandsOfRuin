@@ -24,9 +24,6 @@ public class Ayla {
     private static final float GRAVITY = -1800f;
     private static final float JUMP = 800f;
 
-    // -----------------------
-    // DOBLE SALTO
-    // -----------------------
     private static final int MAX_JUMPS = 2;
     private int jumpsLeft = MAX_JUMPS;
 
@@ -34,7 +31,6 @@ public class Ayla {
 
     private boolean jumpWasDown = false;
 
-    // Offset visual (solo dibujo)
     private static final float FOOT_OFFSET = 14f;
 
     // HITBOX
@@ -57,7 +53,6 @@ public class Ayla {
 
     private final Rectangle bounds = new Rectangle();
 
-    // ===================== DISPARO =====================
     private final Texture bulletTex;
     private final Texture specialBulletTex;
 
@@ -73,7 +68,6 @@ public class Ayla {
     private static final float BULLET_OFFSET_X = 190f;
     private static final float BULLET_OFFSET_Y = 190f;
 
-    // ===================== NORMAL: 2 tiros, 3º intento -> cooldown 3s =====================
     private static final int NORMAL_MAX_SHOTS = 2;
     private static final float NORMAL_COOLDOWN_TIME = 3f;
 
@@ -83,27 +77,22 @@ public class Ayla {
 
     private boolean shootWasDown = false;
 
-    // ===================== ESPECIAL: 1 cada 15s, daño 2 =====================
     private static final float SPECIAL_COOLDOWN_TIME = 15f;
     private float specialTimer = 0f;
 
     private boolean specialWasDown = false;
 
-    // ===================== MALDICIÓN (momia) =====================
     private float cursedTimer = 0f;
     private static final float CURSE_DEFAULT_TIME = 4.0f;
 
-    // ===================== VIDAS =====================
     private int maxLives = 5;
     private int lives = 5;
 
-    // Invulnerabilidad tras recibir daño
     private float invulnTimer = 0f;
     private static final float INVULN_TIME = 3.0f;
 
     private float blinkTimer = 0f;
 
-    // ===================== SFX CONTINUO (Correr) =====================
     private long runLoopId = -1;
 
     public Ayla(AudioManager audio,
@@ -140,7 +129,6 @@ public class Ayla {
         updateBounds();
     }
 
-    // ✅ Mantengo tu firma antigua para no romper llamadas existentes:
     public void update(float delta,
                        boolean left,
                        boolean right,
@@ -153,7 +141,6 @@ public class Ayla {
         update(delta, left, right, jump, shoot, grenade, groundY, camLeft, camRight, false);
     }
 
-    // ✅ NUEVO: forceRun para cutscenes/autowalk
     public void update(float delta,
                        boolean left,
                        boolean right,
@@ -173,16 +160,12 @@ public class Ayla {
 
         if (forceRun && !movingByInput) facingRight = true;
 
-        // ===================== TIMERS =====================
         if (invulnTimer > 0f) invulnTimer -= delta;
         if (invulnTimer < 0f) invulnTimer = 0f;
 
         if (blinkTimer > 0f) blinkTimer -= delta;
         if (blinkTimer < 0f) blinkTimer = 0f;
 
-        // -----------------------
-        // DOBLE SALTO
-        // -----------------------
         boolean jumpJustPressed = jump && !jumpWasDown;
         jumpWasDown = jump;
 
@@ -190,18 +173,15 @@ public class Ayla {
             boolean isDoubleJump = !onGround;
             velY = JUMP * (isDoubleJump ? DOUBLE_JUMP_MUL : 1f);
 
-            // ✅ SFX salto (también en doble salto)
             if (audio != null) audio.playSfx(Assets.SFX_AYLA_JUMP);
 
             onGround = false;
             jumpsLeft--;
         }
 
-        // física
         velY += GRAVITY * delta;
         y += velY * delta;
 
-        // suelo
         if (y <= groundY) {
             y = groundY;
             velY = 0;
@@ -209,20 +189,16 @@ public class Ayla {
             jumpsLeft = MAX_JUMPS;
         }
 
-        // Animación run
         if (moving && onGround) stateTime += delta;
         else stateTime = 0f;
 
-        // ✅ RUN SFX: SOLO cuando corre EN EL SUELO y está viva
         handleRunSfx(moving, onGround);
 
-        // ===================== MALDICIÓN TIMER =====================
         if (cursedTimer > 0f) {
             cursedTimer -= delta;
             if (cursedTimer < 0f) cursedTimer = 0f;
         }
 
-        // ===================== COOLDOWNS =====================
         if (normalOnCooldown) {
             normalCooldownTimer += delta;
             if (normalCooldownTimer >= NORMAL_COOLDOWN_TIME) {
@@ -237,7 +213,6 @@ public class Ayla {
             if (specialTimer < 0f) specialTimer = 0f;
         }
 
-        // ===================== DISPAROS (just pressed) =====================
         boolean shootJustPressed = shoot && !shootWasDown;
         shootWasDown = shoot;
 
@@ -247,7 +222,6 @@ public class Ayla {
         if (shootJustPressed) tryNormalShoot();
         if (specialJustPressed) trySpecialShoot();
 
-        // ===================== ACTUALIZAR BALAS =====================
         for (int i = bullets.size - 1; i >= 0; i--) {
             Bullet b = bullets.get(i);
             b.update(delta);
@@ -261,7 +235,6 @@ public class Ayla {
         updateBounds();
     }
 
-    /** ✅ Arranca/parar loop de correr SIN spamear. */
     private void handleRunSfx(boolean moving, boolean onGroundNow) {
 
         // Si está muerta -> fuera
@@ -270,11 +243,8 @@ public class Ayla {
             return;
         }
 
-        // Solo corre si está en el suelo y se mueve
         boolean shouldRun = moving && onGroundNow;
 
-        // (Opcional) si quieres que NO suene mientras está invulnerable, descomenta:
-        // if (invulnTimer > 0f) shouldRun = false;
 
         if (shouldRun) {
             if (runLoopId == -1) {
@@ -299,7 +269,6 @@ public class Ayla {
             normalOnCooldown = true;
             normalCooldownTimer = 0f;
 
-            // ✅ reloadgun
             if (audio != null) audio.playSfx(Assets.SFX_GUN_RELOAD);
             return;
         }
@@ -309,7 +278,6 @@ public class Ayla {
         spawnBullet(bulletTex, 1);
         normalShots++;
 
-        // ✅ Ayla dispara normal -> ShotGun2
         if (audio != null) audio.playSfx(Assets.SFX_SHOT_GUN_2);
     }
 
@@ -320,7 +288,6 @@ public class Ayla {
         spawnBullet(specialBulletTex, 2);
         specialTimer = SPECIAL_COOLDOWN_TIME;
 
-        // ✅ especial/grenade -> ShotGun
         if (audio != null) audio.playSfx(Assets.SFX_SHOT_GUN_1);
     }
 
@@ -427,16 +394,20 @@ public class Ayla {
 
         invulnTimer = INVULN_TIME;
 
-        // ✅ Ayla pierde vida -> AylaDamage
-        if (audio != null) audio.playSfx(Assets.SFX_AYLA_DAMAGE);
+        if (audio != null) {
+            audio.playSfx(Assets.SFX_AYLA_DAMAGE);
+        }
 
-        try {
-            if (Gdx.input.isPeripheralAvailable(Input.Peripheral.Vibrator)) {
-                Gdx.input.vibrate(120);
-            }
-        } catch (Exception ignored) {}
+        if (Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Android) {
+            try {
+                if (Gdx.input.isPeripheralAvailable(Input.Peripheral.Vibrator)) {
+                    Gdx.input.vibrate(150);
+                }
+            } catch (Exception ignored) {}
+        }
 
         if (isDead()) stopRunLoop();
+
         return true;
     }
 
@@ -447,7 +418,6 @@ public class Ayla {
         stopRunLoop();
     }
 
-    // ✅ MUY IMPORTANTE: llama a esto cuando cambies de pantalla o pauses
     public void stopAllLoops() {
         stopRunLoop();
     }

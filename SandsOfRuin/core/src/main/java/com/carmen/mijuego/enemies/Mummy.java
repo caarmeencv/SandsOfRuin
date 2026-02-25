@@ -122,7 +122,7 @@ public class Mummy {
                 state = State.IDLE;
                 stateTime = 0f;
             }
-            stopGrunts(); // ✅ solo gruñe andando
+            stopGrunts();
             updateBounds();
             return;
         }
@@ -133,7 +133,6 @@ public class Mummy {
             stateTime = 0f;
         }
 
-        // ✅ andando -> MummyGrunts (loop)
         startGrunts();
 
         x += Math.signum(dx) * SPEED * delta;
@@ -153,7 +152,6 @@ public class Mummy {
         }
     }
 
-    /** ✅ Decide si este frame la momia dispara */
     public boolean canShoot(float delta) {
         if (state == State.DEAD || state == State.DYING_HURT) return false;
 
@@ -162,7 +160,6 @@ public class Mummy {
 
         shootTimer = SHOOT_COOLDOWN;
 
-        // ✅ momia dispara -> MummyShots
         audio.playSfx(Assets.SFX_MUMMY_SHOTS);
 
         return true;
@@ -206,8 +203,6 @@ public class Mummy {
         bounds.set(0, 0, 0, 0);
 
         stopGrunts();
-
-        // ✅ momia muere -> MummyDead
         audio.playSfx(Assets.SFX_MUMMY_DEAD);
     }
 

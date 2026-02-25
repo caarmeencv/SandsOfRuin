@@ -16,7 +16,6 @@ public class Soldier {
 
     private enum State { IDLE, RUN, HURT, DEAD, GONE }
 
-    // ===== SPRITES =====
     private static final int FRAME_W = 403;
     private static final int FRAME_H = 457;
 
@@ -24,14 +23,11 @@ public class Soldier {
     private final float width  = FRAME_W * SCALE;
     private final float height = FRAME_H * SCALE;
 
-    // Offset visual (solo dibujo)
     private static final float FOOT_OFFSET = 14f;
 
-    // ===== COMPORTAMIENTO =====
     private static final float RUN_SPEED = 260f;
     private static final float STOP_DISTANCE = 800f;
 
-    // DISPARO (solo parado)
     private static final float SHOOT_COOLDOWN = 3f;
     private static final float BULLET_SPEED = 900f;
 
@@ -41,14 +37,11 @@ public class Soldier {
     private static final float BULLET_OFFSET_X = 55f;
     private static final float BULLET_OFFSET_Y = 145f;
 
-    // ===== HURT =====
     private static final float HURT_DURATION = 0.35f;
 
-    // ===== BLINK (DEAD) =====
     private static final int BLINK_TIMES = 3;
     private static final float BLINK_INTERVAL = 0.10f;
 
-    // ===== HITBOX =====
     private static final float HIT_PAD_L = 120f * SCALE;
     private static final float HIT_PAD_R = 120f * SCALE;
     private static final float HIT_PAD_BOTTOM = 50f * SCALE;
@@ -68,7 +61,6 @@ public class Soldier {
     private float shootTimer = 0f;
     private float hurtTimer = 0f;
 
-    // ✅ decidir run/idle en State.RUN
     private boolean moving = false;
 
     // blink
@@ -83,7 +75,6 @@ public class Soldier {
 
     private final Rectangle bounds = new Rectangle();
 
-    // SFX continuo correr
     private long runLoopId = -1;
 
     public Soldier(AudioManager audio,
@@ -126,7 +117,6 @@ public class Soldier {
 
         if (state == State.GONE) return;
 
-        // IDLE -> RUN cuando entra en pantalla
         if (state == State.IDLE) {
             if (x < camRight + 10f) {
                 state = State.RUN;
@@ -150,10 +140,8 @@ public class Soldier {
                 moving = false;
             }
 
-            // ✅ correr -> CharacterRun (loop)
             handleRunSfx();
 
-            // dispara solo cuando está parado
             if (stopped) {
                 shootTimer -= delta;
                 if (shootTimer <= 0f) {
@@ -171,9 +159,7 @@ public class Soldier {
             }
         }
 
-        // DEAD -> blink -> GONE
         if (state == State.DEAD) {
-            // parar run loop si quedaba
             stopRunLoop();
 
             blinkTimer += delta;
@@ -188,7 +174,6 @@ public class Soldier {
             }
         }
 
-        // Balas
         for (int i = bullets.size - 1; i >= 0; i--) {
             Bullet b = bullets.get(i);
             b.update(delta);
@@ -223,7 +208,6 @@ public class Soldier {
     private void shoot() {
         if (state != State.RUN) return;
 
-        // ✅ soldado dispara -> ShotGun2
         audio.playSfx(Assets.SFX_SHOT_GUN_2);
 
         float dir = facingRight ? 1f : -1f;
@@ -250,7 +234,6 @@ public class Soldier {
 
         hitsTaken++;
 
-        // ✅ primer disparo -> SoldierDamage
         if (hitsTaken == 1) {
             audio.playSfx(Assets.SFX_SOLDIER_DAMAGE);
         }
@@ -268,7 +251,6 @@ public class Soldier {
         state = State.DEAD;
         stateTime = 0f;
 
-        // ✅ soldado muere -> SoldierDead
         audio.playSfx(Assets.SFX_SOLDIER_DEAD);
 
         blinkTimer = 0f;

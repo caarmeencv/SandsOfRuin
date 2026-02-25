@@ -41,7 +41,6 @@ public class Controls implements InputProcessor {
     private final Vector2 touch = new Vector2();
     private final Viewport viewport;
 
-    // ✅ Audio para clicks
     private final AudioManager audio;
 
     // Multitouch: un dedo por botón
@@ -52,15 +51,12 @@ public class Controls implements InputProcessor {
     private int grenadePointer = -1;
     private int pausePointer = -1;
 
-    // Oscurecer al pulsar
     private static final float PRESSED_TINT = 0.75f;
 
-    // ===== CONTADOR (texto al lado del pause) =====
     private final BitmapFont font;
     private final GlyphLayout layout = new GlyphLayout();
     private String counterText = "00:00";
 
-    // ✅ Cooldown ring
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
 
     public Controls(AudioManager audio,
@@ -80,14 +76,10 @@ public class Controls implements InputProcessor {
         font.getData().setScale(3f);
     }
 
-    /** Setea el texto del contador (ej: "02:15"). Llámalo desde la Screen. */
     public void setCounterText(String text) {
         this.counterText = text;
     }
 
-    /**
-     * HUD relativo a la cámara (anclado a la pantalla visible).
-     */
     public void updateLayout(OrthographicCamera cam, Viewport vp) {
         float worldW = vp.getWorldWidth();
         float worldH = vp.getWorldHeight();
@@ -97,60 +89,41 @@ public class Controls implements InputProcessor {
         float camBottom = cam.position.y - worldH / 2f;
         float camTop    = cam.position.y + worldH / 2f;
 
-        // ✅ MÁS GRANDES
         float size = worldH * 0.125f;
 
-        // Un pelín más de separación
         float gap  = worldH * 0.020f;
 
-        // Márgenes seguros
         float safePadX = worldW * 0.03f;
         float safePadY = worldH * 0.035f;
 
-        // ✅ PAUSE (igual)
         float pausePadX = worldW * 0.010f;
         float pausePadY = worldH * 0.015f;
 
-        // ✅ MÁS ABAJO
         float bottomRaise = worldH * 0.015f;
         float bottomY = camBottom + safePadY + bottomRaise;
 
-        // Izquierda
         rLeft.set(camLeft + safePadX, bottomY, size, size);
 
-        // Derecha
         rRight.set(rLeft.x + size + gap, bottomY, size, size);
 
-        // Saltar (abajo derecha)
         rJump.set(camRight - safePadX - size, bottomY, size, size);
 
-        // Disparar (a la izquierda del salto)
         rShoot.set(rJump.x - gap - size, bottomY, size, size);
 
-        // ✅ Granada encima del SALTO
         rGrenade.set(rJump.x, bottomY + size + gap, size, size);
 
-        // Pause arriba derecha
         float pauseSize = size * 0.82f;
         float pauseX = camRight - pausePadX - pauseSize;
         float pauseY = camTop - pausePadY - pauseSize;
         rPause.set(pauseX, pauseY, pauseSize, pauseSize);
     }
 
-    /** Compatibilidad con tu código antiguo */
     public void draw(SpriteBatch batch) {
         draw(batch, 0f, 0f);
     }
 
-    /**
-     * ✅ Dibuja controles + cooldown rings (debajo del botón)
-     * percent: 0 listo, 1 cooldown completo (se va vaciando)
-     */
     public void draw(SpriteBatch batch, float shootCooldownPercent, float grenadeCooldownPercent) {
 
-        // =====================
-        // 1) Dibujar rings DEBAJO (si toca)
-        // =====================
         boolean anyRing = (shootCooldownPercent > 0f) || (grenadeCooldownPercent > 0f);
         if (anyRing) {
             batch.end();
@@ -170,9 +143,6 @@ public class Controls implements InputProcessor {
             batch.begin();
         }
 
-        // =====================
-        // 2) Dibujar BOTONES ENCIMA
-        // =====================
         drawButton(batch, left, rLeft, leftPressed);
         drawButton(batch, right, rRight, rightPressed);
         drawButton(batch, jump, rJump, jumpPressed);
@@ -180,9 +150,6 @@ public class Controls implements InputProcessor {
         drawButton(batch, grenade, rGrenade, grenadePressed);
         drawButton(batch, pause, rPause, pausePressed);
 
-        // =====================
-        // 3) Contador
-        // =====================
         layout.setText(font, counterText);
 
         float spacing = 22f;
@@ -224,7 +191,6 @@ public class Controls implements InputProcessor {
         if (pointer == pausePointer)   { pausePointer = -1; pausePressed = false; }
     }
 
-    // ===================== INPUT TÁCTIL =====================
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         unproject(screenX, screenY);
@@ -258,7 +224,6 @@ public class Controls implements InputProcessor {
             pausePointer = pointer;
             pausePressed = true;
 
-            // ✅ PAUSE -> ButtonClicked
             if (audio != null) audio.playSfx(Assets.SFX_BUTTON_CLICKED);
 
             return true;
@@ -279,7 +244,6 @@ public class Controls implements InputProcessor {
         return true;
     }
 
-    // ===================== INPUT TECLADO (ORDENADOR) =====================
     @Override
     public boolean keyDown(int keycode) {
         if (keycode == Input.Keys.A) leftPressed = true;
@@ -293,7 +257,6 @@ public class Controls implements InputProcessor {
         if (keycode == Input.Keys.ESCAPE) {
             pausePressed = true;
 
-            // ✅ ESC -> ButtonClicked
             if (audio != null) audio.playSfx(Assets.SFX_BUTTON_CLICKED);
         }
 
@@ -315,13 +278,11 @@ public class Controls implements InputProcessor {
         return false;
     }
 
-    // ===================== NO USADOS =====================
     @Override public boolean keyTyped(char character) { return false; }
     @Override public boolean touchDragged(int screenX, int screenY, int pointer) { return false; }
     @Override public boolean mouseMoved(int screenX, int screenY) { return false; }
     @Override public boolean scrolled(float amountX, float amountY) { return false; }
 
-    /** ✅ Limpia TODOS los botones y punteros multitouch (pausa / cambio de pantalla). */
     public void resetAll() {
         leftPressed = false;
         rightPressed = false;
