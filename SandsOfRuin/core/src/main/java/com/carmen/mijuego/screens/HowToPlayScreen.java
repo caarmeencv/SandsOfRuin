@@ -14,8 +14,10 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
 import com.carmen.mijuego.Main;
 import com.carmen.mijuego.assets.Assets;
+import com.carmen.mijuego.ui.Fonts;
 
 public class HowToPlayScreen implements Screen {
 
@@ -29,9 +31,8 @@ public class HowToPlayScreen implements Screen {
 
     private Texture bg;
 
-    private BitmapFont fontTitle;
-    private BitmapFont fontBody;
-    private BitmapFont fontFooter;
+    // ✅ Una sola fuente global
+    private BitmapFont font;
 
     private GlyphLayout layoutTitle;
     private GlyphLayout layoutLeft;
@@ -42,6 +43,7 @@ public class HowToPlayScreen implements Screen {
     private final Vector2 pointerWorld = new Vector2();
     private final Rectangle rTapBack = new Rectangle();
     private final Rectangle rKeyBack = new Rectangle();
+
     private boolean hoverTapBack = false;
     private boolean hoverKeyBack = false;
 
@@ -57,17 +59,8 @@ public class HowToPlayScreen implements Screen {
 
         bg = game.assets.get(Assets.SCREEN_HOWTOPLAY_BG);
 
-        fontTitle = new BitmapFont();
-        fontTitle.setColor(Color.WHITE);
-        fontTitle.getData().setScale(2.6f);
-
-        fontBody = new BitmapFont();
-        fontBody.setColor(Color.WHITE);
-        fontBody.getData().setScale(1.8f);
-
-        fontFooter = new BitmapFont();
-        fontFooter.setColor(Color.WHITE);
-        fontFooter.getData().setScale(1.35f);
+        font = Fonts.main(game);
+        font.setColor(Color.WHITE);
 
         layoutTitle = new GlyphLayout();
         layoutLeft = new GlyphLayout();
@@ -89,24 +82,37 @@ public class HowToPlayScreen implements Screen {
         pointerWorld.set(Gdx.input.getX(), Gdx.input.getY());
         viewport.unproject(pointerWorld);
 
-        hoverTapBack = rTapBack.contains(pointerWorld);
-        hoverKeyBack = rKeyBack.contains(pointerWorld);
+        if (rTapBack.contains(pointerWorld)) {
+            hoverTapBack = true;
+        } else {
+            hoverTapBack = false;
+        }
+
+        if (rKeyBack.contains(pointerWorld)) {
+            hoverKeyBack = true;
+        } else {
+            hoverKeyBack = false;
+        }
     }
 
     private void updateFooterRects() {
+
         float tapX = (WORLD_W - layoutTapBack.width) / 2f;
         float tapY = 95f;
-        rTapBack.set(tapX, tapY - layoutTapBack.height, layoutTapBack.width, layoutTapBack.height);
+        rTapBack.set(tapX, tapY - layoutTapBack.height,
+            layoutTapBack.width, layoutTapBack.height);
 
         float keyX = (WORLD_W - layoutKeyBack.width) / 2f;
         float keyY = 65f;
-        rKeyBack.set(keyX, keyY - layoutKeyBack.height, layoutKeyBack.width, layoutKeyBack.height);
+        rKeyBack.set(keyX, keyY - layoutKeyBack.height,
+            layoutKeyBack.width, layoutKeyBack.height);
     }
 
     @Override
     public void render(float delta) {
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.isKeyJustPressed(Input.Keys.BACK)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) ||
+            Gdx.input.isKeyJustPressed(Input.Keys.BACK)) {
             goBack();
             return;
         }
@@ -114,7 +120,11 @@ public class HowToPlayScreen implements Screen {
         updatePointer();
 
         if (Gdx.input.justTouched()) {
-            if (hoverTapBack || hoverKeyBack) {
+            if (hoverTapBack) {
+                goBack();
+                return;
+            }
+            if (hoverKeyBack) {
                 goBack();
                 return;
             }
@@ -140,49 +150,103 @@ public class HowToPlayScreen implements Screen {
         float bottomLimit = 130f;
         float availableH = topY - bottomLimit;
 
-        layoutTitle.setText(fontTitle, game.i18n.t("howto.title"));
+        // ======================
+        // TITLE
+        // ======================
+        font.getData().setScale(2.6f);
+        layoutTitle.setText(font, game.i18n.t("howto.title"));
 
+        // ======================
+        // BODY AUTO-SCALE
+        // ======================
         float scale = 1.9f;
-        for (int i = 0; i < 8; i++) {
-            fontBody.getData().setScale(scale);
 
-            layoutLeft.setText(fontBody, leftText, Color.WHITE, columnW, Align.left, true);
-            layoutRight.setText(fontBody, rightText, Color.WHITE, columnW, Align.left, true);
+        for (int i = 0; i < 8; i++) {
+
+            font.getData().setScale(scale);
+
+            layoutLeft.setText(font, leftText, Color.WHITE,
+                columnW, Align.left, true);
+
+            layoutRight.setText(font, rightText, Color.WHITE,
+                columnW, Align.left, true);
 
             float neededH = Math.max(layoutLeft.height, layoutRight.height);
-            if (neededH <= availableH) break;
 
-            scale -= 0.10f;
+            if (neededH <= availableH) {
+                break;
+            }
+
+            scale = scale - 0.10f;
         }
 
-        fontFooter.getData().setScale(1.45f);
-        String tapBack = hoverTapBack ? game.i18n.t("howto.tap.hover") : game.i18n.t("howto.tap.normal");
-        layoutTapBack.setText(fontFooter, tapBack);
+        // ======================
+        // FOOTER TEXTS
+        // ======================
 
-        fontFooter.getData().setScale(1.20f);
-        String keyBack = hoverKeyBack ? game.i18n.t("howto.key.hover") : game.i18n.t("howto.key.normal");
-        layoutKeyBack.setText(fontFooter, keyBack);
+        String tapBack;
+        if (hoverTapBack) {
+            tapBack = game.i18n.t("howto.tap.hover");
+        } else {
+            tapBack = game.i18n.t("howto.tap.normal");
+        }
+
+        font.getData().setScale(1.45f);
+        layoutTapBack.setText(font, tapBack);
+
+        String keyBack;
+        if (hoverKeyBack) {
+            keyBack = game.i18n.t("howto.key.hover");
+        } else {
+            keyBack = game.i18n.t("howto.key.normal");
+        }
+
+        font.getData().setScale(1.20f);
+        layoutKeyBack.setText(font, keyBack);
 
         updateFooterRects();
 
+        // ======================
+        // DRAW
+        // ======================
         game.batch.begin();
 
         game.batch.draw(bg, 0, 0, WORLD_W, WORLD_H);
 
-        fontTitle.draw(game.batch, layoutTitle, (WORLD_W - layoutTitle.width) / 2f, 665f);
+        // Title
+        font.setColor(Color.WHITE);
+        font.getData().setScale(2.6f);
+        font.draw(game.batch, layoutTitle,
+            (WORLD_W - layoutTitle.width) / 2f, 665f);
 
-        fontBody.draw(game.batch, layoutLeft, leftX, topY);
-        fontBody.draw(game.batch, layoutRight, rightX, topY);
+        // Body
+        font.getData().setScale(scale);
+        font.draw(game.batch, layoutLeft, leftX, topY);
+        font.draw(game.batch, layoutRight, rightX, topY);
 
-        fontFooter.getData().setScale(1.45f);
-        fontFooter.setColor(hoverTapBack ? Color.WHITE : Color.LIGHT_GRAY);
-        fontFooter.draw(game.batch, layoutTapBack, (WORLD_W - layoutTapBack.width) / 2f, 95f);
+        // Tap back
+        font.getData().setScale(1.45f);
+        if (hoverTapBack) {
+            font.setColor(Color.WHITE);
+        } else {
+            font.setColor(Color.LIGHT_GRAY);
+        }
+        font.draw(game.batch, layoutTapBack,
+            (WORLD_W - layoutTapBack.width) / 2f, 95f);
 
-        fontFooter.getData().setScale(1.20f);
-        fontFooter.setColor(hoverKeyBack ? Color.WHITE : Color.LIGHT_GRAY);
-        fontFooter.draw(game.batch, layoutKeyBack, (WORLD_W - layoutKeyBack.width) / 2f, 65f);
+        // Key back
+        font.getData().setScale(1.20f);
+        if (hoverKeyBack) {
+            font.setColor(Color.WHITE);
+        } else {
+            font.setColor(Color.LIGHT_GRAY);
+        }
+        font.draw(game.batch, layoutKeyBack,
+            (WORLD_W - layoutKeyBack.width) / 2f, 65f);
 
-        fontFooter.setColor(Color.WHITE);
+        // Reset
+        Fonts.resetColor(font);
+        font.getData().setScale(1f);
 
         game.batch.end();
     }
@@ -198,8 +262,6 @@ public class HowToPlayScreen implements Screen {
 
     @Override
     public void dispose() {
-        fontTitle.dispose();
-        fontBody.dispose();
-        fontFooter.dispose();
+        // NO dispose (AssetManager)
     }
 }

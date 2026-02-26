@@ -10,6 +10,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
 import com.carmen.mijuego.input.AccelerometerJumpDetector;
 import com.carmen.mijuego.Main;
 import com.carmen.mijuego.assets.Assets;
@@ -18,6 +19,7 @@ import com.carmen.mijuego.enemies.Mummy;
 import com.carmen.mijuego.input.Controls;
 import com.carmen.mijuego.projectiles.Bullet;
 import com.carmen.mijuego.projectiles.MummyBulletSystem;
+import com.carmen.mijuego.settings.MummyTimeRecords;
 import com.carmen.mijuego.ui.CurseParticles;
 import com.carmen.mijuego.ui.LivesHUD;
 import com.carmen.mijuego.world.ParallaxPyramid;
@@ -27,12 +29,15 @@ public class PyramidScreen implements Screen {
     private boolean snapCameraOnResume = false;
     private float resumeImmunity = 0f;
     private static final float RESUME_IMMUNITY_TIME = 2.0f;
+
     private static final float WORLD_W = 1280f;
     private static final float WORLD_H = 720f;
 
     private static final float GROUND_Y = 90f;
+
     // ✅ salto por acelerómetro
     private final AccelerometerJumpDetector accelJump = new AccelerometerJumpDetector();
+
     private static final float INTRO_START_X = -260f;
     private static final float INTRO_TARGET_X = 220f;
     private static final float INTRO_WALK_SPEED = 280f;
@@ -145,6 +150,13 @@ public class PyramidScreen implements Screen {
     private float baseCamY;
     private float baseZoom;
 
+    // =========================
+    // ✅ TIEMPO PARA DERROTAR A LA MOMIA
+    // =========================
+    private float mummyFightTime = 0f;
+    private boolean mummyTimeStarted = false;
+    private boolean mummyTimeSaved = false;
+
     public PyramidScreen(Main game) {
         this.game = game;
 
@@ -179,7 +191,8 @@ public class PyramidScreen implements Screen {
             game.assets.get(Assets.UI_JUMP),
             game.assets.get(Assets.UI_SHOOT),
             game.assets.get(Assets.UI_GRENADE),
-            game.assets.get(Assets.UI_PAUSE));
+            game.assets.get(Assets.UI_PAUSE)
+        );
         Gdx.input.setInputProcessor(controls);
         controls.updateLayout(camera, viewport);
 
@@ -224,12 +237,15 @@ public class PyramidScreen implements Screen {
         controls.resetAll();
         pauseLatch = false;
 
-        // ✅ NUEVO
         accelJump.reset();
 
-        // ✅ siempre sincroniza al entrar (sin sumar nada)
         game.vidas = clampLives(game.vidas);
         ayla.setLives(game.vidas);
+
+        // ✅ resetea timer por si vuelves a entrar
+        mummyFightTime = 0f;
+        mummyTimeStarted = false;
+        mummyTimeSaved = false;
     }
 
     @Override
@@ -300,8 +316,6 @@ public class PyramidScreen implements Screen {
         livesHUD.draw(game.batch, camLeft, camTop, ayla.getLives(), phase == Phase.PLAY);
 
         if (phase == Phase.PLAY) {
-
-            // ✅ NUEVO: activar/desactivar UI según settings (oculta salto / baja granada)
             controls.setAccelJumpEnabled(game.settings.isAccelJumpEnabled());
 
             controls.updateLayout(camera, viewport);
@@ -349,12 +363,11 @@ public class PyramidScreen implements Screen {
                 it.collected = true;
 
                 int before = ayla.getLives();
-                int after = clampLives(before + 1); // si estaba a 5, se queda en 5
+                int after = clampLives(before + 1);
 
                 ayla.setLives(after);
                 game.vidas = after;
 
-                // ✅ SFX al coger vida
                 game.audio.playSfx(Assets.SFX_LIVE);
             }
         }
@@ -421,7 +434,6 @@ public class PyramidScreen implements Screen {
 
         boolean grenadeKey = Gdx.input.isKeyJustPressed(Input.Keys.L);
 
-        // ✅ activar/desactivar UI según settings (oculta salto / baja granada)
         boolean accelMode = game.settings.isAccelJumpEnabled();
         controls.setAccelJumpEnabled(accelMode);
 
@@ -431,11 +443,10 @@ public class PyramidScreen implements Screen {
         boolean shoot = shootKey || controls.shootPressed;
         boolean grenade = grenadeKey || controls.grenadePressed;
 
-// ✅ SALTO: si accelMode => acelerómetro; si no hay acelerómetro (PC) => fallback a normal
         boolean jump;
         if (accelMode) {
             boolean accelJumpNow = accelJump.updateAndConsume(delta);
-            boolean fallbackJump = jumpKey || controls.jumpPressed; // para probar en PC
+            boolean fallbackJump = jumpKey || controls.jumpPressed;
             jump = accelJumpNow || fallbackJump;
         } else {
             jump = jumpKey || controls.jumpPressed;
@@ -512,11 +523,19 @@ public class PyramidScreen implements Screen {
             ayla.setX(camLeft + INTRO_TARGET_X);
             ayla.update(delta, left, right, jump, shoot, grenade, GROUND_Y, camLeft, camRight);
 
-            // ✅ recoger corazones
             updateHeartItems();
 
             if (!mummySpawned && (scrollX - playStartScrollX) >= BOSS_SPAWN_AFTER_SCROLL) {
-                spawnMummyOutsideRight();
+                spawnMummyOutsideRight(); // ✅ aquí empieza el timer
+            }
+
+            // ✅ Si la momia está viva y el timer está activo, contamos
+            if (mummyTimeStarted) {
+                if (mummy != null) {
+                    if (!mummy.isDead()) {
+                        mummyFightTime += delta;
+                    }
+                }
             }
 
             if (mummySpawned && mummy != null && !mummy.isDead()) {
@@ -526,7 +545,6 @@ public class PyramidScreen implements Screen {
 
                 handleAylaBulletsVsMummy();
                 handleMummyBulletsVsAyla();
-
                 handleAylaVsMummyBody();
 
                 game.vidas = clampLives(ayla.getLives());
@@ -543,7 +561,20 @@ public class PyramidScreen implements Screen {
                 }
             }
 
+            // ✅ Cuando la momia muere -> guardamos 1 vez el tiempo
             if (mummySpawned && mummy != null && mummy.isDead()) {
+
+                Gdx.app.log("PYRAMID", "MUMMY DEAD detected. fightTime=" + mummyFightTime + " saved=" + mummyTimeSaved);
+
+                if (!mummyTimeSaved) {
+                    int secs = (int) Math.ceil(mummyFightTime);
+                    if (secs < 1) secs = 1; // ✅ para que nunca guarde 0
+                    MummyTimeRecords.addTimeSeconds(secs);
+                    mummyTimeSaved = true;
+
+                    Gdx.app.log("PYRAMID", "TIME SAVED secs=" + secs);
+                }
+
                 ayla.clearCurse();
                 dizzyTime = 0f;
 
@@ -710,6 +741,11 @@ public class PyramidScreen implements Screen {
 
         float mummyX = camRight + MUMMY_SPAWN_OUTSIDE_PAD;
         mummy = new Mummy(game.audio, mummyIdle, mummyWalk, mummyHurt, mummyDead, mummyX, GROUND_Y);
+
+        // ✅ INICIO TIMER
+        mummyFightTime = 0f;
+        mummyTimeStarted = false;
+        mummyTimeSaved = false;
     }
 
     private void handleAylaBulletsVsMummy() {
@@ -722,6 +758,10 @@ public class PyramidScreen implements Screen {
 
             if (b.getBounds().overlaps(mummy.getBounds())) {
                 b.kill();
+                if (!mummyTimeStarted) {
+                    mummyTimeStarted = true;
+                    mummyFightTime = 0f;
+                }
                 for (int d = 0; d < b.getDamage(); d++) {
                     mummy.hitByAylaBullet();
                 }

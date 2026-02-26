@@ -14,16 +14,14 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.carmen.mijuego.Main;
 import com.carmen.mijuego.assets.Assets;
+import com.carmen.mijuego.ui.Fonts;
 
-/**
- * Pantalla de pausa.
- * - CONTINUAR: vuelve a la pantalla desde la que se pausó.
- * - REINICIAR: reinicia la partida completa (empieza desde DESERT).
- * - VOLVER AL MENU: vuelve al menú principal.
- */
 public class PauseScreen implements Screen {
 
-    public enum Context { DESERT, PYRAMID }
+    public enum Context {
+        DESERT,
+        PYRAMID
+    }
 
     private final Main game;
     private final Screen returnScreen;
@@ -46,10 +44,10 @@ public class PauseScreen implements Screen {
 
     private boolean hoverContinue, hoverReset, hoverMenu;
 
+    private static final float HOVER_SCALE = 1.08f;
+
     private BitmapFont font;
     private GlyphLayout layout;
-
-    private static final float HOVER_SCALE = 1.12f;
 
     public PauseScreen(Main game, Screen returnScreen, Context context) {
         this.game = game;
@@ -63,47 +61,47 @@ public class PauseScreen implements Screen {
         camera.position.set(WORLD_W / 2f, WORLD_H / 2f, 0f);
         camera.update();
 
-        if (context == Context.DESERT) {
-            bg = game.assets.get(Assets.SCREEN_PAUSE_BG_DESERT);
-        } else {
-            bg = game.assets.get(Assets.SCREEN_PAUSE_BG_PYRAMID);
-        }
+        bg = (context == Context.DESERT)
+            ? game.assets.get(Assets.SCREEN_PAUSE_BG_DESERT)
+            : game.assets.get(Assets.SCREEN_PAUSE_BG_PYRAMID);
 
         btnContinue = game.assets.get(Assets.SCREEN_PAUSE_BTN_CONTINUE);
-        btnReset    = game.assets.get(Assets.SCREEN_PAUSE_BTN_RESET);
-        btnMenu     = game.assets.get(Assets.SCREEN_PAUSE_BTN_MENU);
+        btnReset = game.assets.get(Assets.SCREEN_PAUSE_BTN_RESET);
+        btnMenu = game.assets.get(Assets.SCREEN_PAUSE_BTN_MENU);
 
-        font = new BitmapFont();
-        font.getData().setScale(2.6f);
+        // ✅ Fuente del juego
+        font = Fonts.main(game);
+        font.getData().setScale(2.2f);
         layout = new GlyphLayout();
 
         updateLayout();
     }
 
     private void updateLayout() {
-        float btnW = 540f;
-        float btnH = btnW * ((float) btnContinue.getHeight() / btnContinue.getWidth());
-        float gap = 45f;
-        float totalH = btnH * 3f + gap * 2f;
+        float btnW = 520f;
+        float btnH = btnW * ((float) btnContinue.getHeight() / (float) btnContinue.getWidth());
 
-        float x = (WORLD_W - btnW) / 2f;
-        float startY = (WORLD_H - totalH) / 2f;
+        float centerX = (WORLD_W - btnW) / 2f;
+        float startY = WORLD_H / 2f + btnH + 40f;
 
-        rMenu.set(x, startY, btnW, btnH);
-        rReset.set(x, startY + btnH + gap, btnW, btnH);
-        rContinue.set(x, startY + (btnH + gap) * 2f, btnW, btnH);
+        float gap = 30f;
+
+        rContinue.set(centerX, startY, btnW, btnH);
+        rReset.set(centerX, startY - (btnH + gap), btnW, btnH);
+        rMenu.set(centerX, startY - 2f * (btnH + gap), btnW, btnH);
     }
 
     private void updatePointer() {
         pointerWorld.set(Gdx.input.getX(), Gdx.input.getY());
         viewport.unproject(pointerWorld);
 
-        hoverContinue = rContinue.contains(pointerWorld);
-        hoverReset = rReset.contains(pointerWorld);
-        hoverMenu = rMenu.contains(pointerWorld);
+        hoverContinue = rContinue.contains(pointerWorld.x, pointerWorld.y);
+        hoverReset = rReset.contains(pointerWorld.x, pointerWorld.y);
+        hoverMenu = rMenu.contains(pointerWorld.x, pointerWorld.y);
     }
 
     private void drawButton(Texture tex, Rectangle r, boolean hover, String text) {
+
         float scale = hover ? HOVER_SCALE : 1f;
 
         float w = r.width * scale;
@@ -114,57 +112,48 @@ public class PauseScreen implements Screen {
 
         game.batch.draw(tex, x, y, w, h);
 
-        float baseScale = 2.6f;
-        font.getData().setScale(baseScale * scale);
+        float baseFontScale = 2.2f;
+        font.getData().setScale(baseFontScale * scale);
 
         layout.setText(font, text);
 
-        float iconArea = w * 0.22f;
-        float usableWidth = w - iconArea;
-
-        float textX = x + iconArea + (usableWidth - layout.width) / 2f;
+        float iconOffset = w * 0.12f;
+        float textX = x + (w - layout.width) / 2f + iconOffset;
         float textY = y + (h + layout.height) / 2f;
 
-        font.setColor(1f, 1f, 1f, 1f);
         font.draw(game.batch, layout, textX, textY);
 
-        font.getData().setScale(baseScale);
-    }
-
-    private void restartFullRun() {
-        game.resetRun();
-        game.setScreen(new DesertScreen(game));
+        font.getData().setScale(baseFontScale);
     }
 
     @Override
     public void show() {
         game.audio.playMusic(Assets.MUS_PAUSE_THEME, true);
-        Gdx.input.setInputProcessor(null);
     }
 
     @Override
     public void render(float delta) {
+
         updatePointer();
 
         if (Gdx.input.justTouched()) {
-
             if (hoverContinue) {
                 game.setScreen(returnScreen);
                 return;
             }
-
             if (hoverReset) {
-                restartFullRun();
+                game.resetRun();
+                if (context == Context.DESERT) game.setScreen(new DesertScreen(game));
+                else game.setScreen(new PyramidScreen(game));
                 return;
             }
-
             if (hoverMenu) {
                 game.setScreen(new MenuScreen(game));
                 return;
             }
         }
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.isKeyJustPressed(Input.Keys.BACK)) {
             game.setScreen(returnScreen);
             return;
         }
@@ -176,11 +165,10 @@ public class PauseScreen implements Screen {
         game.batch.setProjectionMatrix(camera.combined);
 
         game.batch.begin();
-
         game.batch.draw(bg, 0, 0, WORLD_W, WORLD_H);
 
         drawButton(btnContinue, rContinue, hoverContinue, game.i18n.t("pause.continue"));
-        drawButton(btnReset, rReset, hoverReset, game.i18n.t("pause.restart"));
+        drawButton(btnReset, rReset, hoverReset, game.i18n.t("pause.reset"));
         drawButton(btnMenu, rMenu, hoverMenu, game.i18n.t("pause.menu"));
 
         game.batch.end();
@@ -198,6 +186,6 @@ public class PauseScreen implements Screen {
 
     @Override
     public void dispose() {
-        font.dispose();
+        // ✅ NO dispose()
     }
 }

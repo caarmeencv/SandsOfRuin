@@ -17,6 +17,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 
 import com.carmen.mijuego.Main;
 import com.carmen.mijuego.assets.Assets;
+import com.carmen.mijuego.ui.Fonts;
 
 public class OptionsScreen implements Screen {
 
@@ -86,7 +87,9 @@ public class OptionsScreen implements Screen {
 
         clickSound = game.assets.get(Assets.SFX_BUTTON_CLICKED);
 
-        font = new BitmapFont();
+        // ✅ Fuente global con helper
+        font = Fonts.main(game);
+
         layout = new GlyphLayout();
         backLayout = new GlyphLayout();
 
@@ -100,7 +103,6 @@ public class OptionsScreen implements Screen {
         spacing = 85f;
 
         float centerX = WORLD_W / 2f;
-
         float offsetLeft = 80f;
 
         switchX = centerX - 180f - offsetLeft;
@@ -121,11 +123,16 @@ public class OptionsScreen implements Screen {
 
     private void updateBackBounds() {
         font.getData().setScale(1.7f);
+
         String txt = game.i18n.t("options.back");
         backLayout.setText(font, txt);
+
         float x = 60f;
         float y = 60f;
+
         backBounds.set(x, y - backLayout.height, backLayout.width, backLayout.height);
+
+        // higiene
         font.getData().setScale(1f);
     }
 
@@ -147,13 +154,18 @@ public class OptionsScreen implements Screen {
 
         game.batch.draw(bg, 0, 0, WORLD_W, WORLD_H);
 
-        // Título
+        // =========================
+        // TÍTULO
+        // =========================
         font.setColor(Color.WHITE);
         font.getData().setScale(3.0f);
+
         layout.setText(font, game.i18n.t("options.title"));
         font.draw(game.batch, layout, (WORLD_W - layout.width) / 2f, WORLD_H - 60f);
 
-        // Texto negro y más grande
+        // =========================
+        // FILAS
+        // =========================
         font.setColor(Color.BLACK);
         font.getData().setScale(2.3f);
 
@@ -163,28 +175,29 @@ public class OptionsScreen implements Screen {
         drawRow(game.i18n.t("options.music"), musicBounds);
         drawRow(game.i18n.t("options.sfx"), sfxBounds);
 
-        // Switches
-        if (isSpanish) game.batch.draw(switchES, langBounds.x, langBounds.y, SWITCH_W, SWITCH_H);
-        else game.batch.draw(switchEN, langBounds.x, langBounds.y, SWITCH_W, SWITCH_H);
+        // =========================
+        // SWITCHES
+        // =========================
+        game.batch.draw(isSpanish ? switchES : switchEN, langBounds.x, langBounds.y, SWITCH_W, SWITCH_H);
 
-        if (accelJumpOn) game.batch.draw(switchOn, accelJumpBounds.x, accelJumpBounds.y, SWITCH_W, SWITCH_H);
-        else game.batch.draw(switchOff, accelJumpBounds.x, accelJumpBounds.y, SWITCH_W, SWITCH_H);
+        game.batch.draw(accelJumpOn ? switchOn : switchOff, accelJumpBounds.x, accelJumpBounds.y, SWITCH_W, SWITCH_H);
+        game.batch.draw(vibrationOn ? switchOn : switchOff, vibrationBounds.x, vibrationBounds.y, SWITCH_W, SWITCH_H);
+        game.batch.draw(musicOn ? switchOn : switchOff, musicBounds.x, musicBounds.y, SWITCH_W, SWITCH_H);
+        game.batch.draw(sfxOn ? switchOn : switchOff, sfxBounds.x, sfxBounds.y, SWITCH_W, SWITCH_H);
 
-        if (vibrationOn) game.batch.draw(switchOn, vibrationBounds.x, vibrationBounds.y, SWITCH_W, SWITCH_H);
-        else game.batch.draw(switchOff, vibrationBounds.x, vibrationBounds.y, SWITCH_W, SWITCH_H);
-
-        if (musicOn) game.batch.draw(switchOn, musicBounds.x, musicBounds.y, SWITCH_W, SWITCH_H);
-        else game.batch.draw(switchOff, musicBounds.x, musicBounds.y, SWITCH_W, SWITCH_H);
-
-        if (sfxOn) game.batch.draw(switchOn, sfxBounds.x, sfxBounds.y, SWITCH_W, SWITCH_H);
-        else game.batch.draw(switchOff, sfxBounds.x, sfxBounds.y, SWITCH_W, SWITCH_H);
-
-        // Volver al menú
+        // =========================
+        // VOLVER
+        // =========================
         font.getData().setScale(1.7f);
         font.setColor(Color.BLACK);
+
         String backTxt = game.i18n.t("options.back");
         backLayout.setText(font, backTxt);
         font.draw(game.batch, backLayout, backBounds.x, backBounds.y + backBounds.height);
+
+        // ✅ reset de color por higiene (si una pantalla cambia alpha, etc.)
+        Fonts.resetColor(font);
+        font.getData().setScale(1f);
 
         game.batch.end();
 
@@ -273,6 +286,6 @@ public class OptionsScreen implements Screen {
 
     @Override
     public void dispose() {
-        font.dispose();
+        // ✅ NO dispose(): la fuente la gestiona AssetManager
     }
 }

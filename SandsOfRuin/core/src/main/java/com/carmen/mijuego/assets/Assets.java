@@ -241,6 +241,10 @@ public class Assets {
     public static final AssetDescriptor<Music> MUS_VICTORY_THEME =
         new AssetDescriptor<>(AssetPaths.MUS_VICTORY_THEME, Music.class);
 
+    // ===== FONTS =====
+    public static final AssetDescriptor<com.badlogic.gdx.graphics.g2d.BitmapFont> FONT_MAIN =
+        new AssetDescriptor<>(AssetPaths.FONT_MAIN_FNT, com.badlogic.gdx.graphics.g2d.BitmapFont.class);
+
     // ===================== LIFECYCLE =====================
 
     public Assets() {
@@ -369,6 +373,9 @@ public class Assets {
         manager.load(MUS_PAUSE_THEME);
         manager.load(MUS_PYRAMID_THEME);
         manager.load(MUS_VICTORY_THEME);
+
+        // Fonts
+        manager.load(FONT_MAIN);
 
     }
 

@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 
 import com.carmen.mijuego.Main;
 import com.carmen.mijuego.assets.Assets;
+import com.carmen.mijuego.ui.Fonts;
 
 public class IntroScreen implements Screen {
 
@@ -43,7 +44,8 @@ public class IntroScreen implements Screen {
 
         introImage = game.assets.get(Assets.SCREEN_INTRO);
 
-        font = new BitmapFont();
+        // ✅ Fuente del juego
+        font = Fonts.main(game);
         font.getData().setScale(1.5f);
         layout = new GlyphLayout();
     }
@@ -99,6 +101,6 @@ public class IntroScreen implements Screen {
 
     @Override
     public void dispose() {
-        font.dispose();
+        // ✅ NO dispose()
     }
 }

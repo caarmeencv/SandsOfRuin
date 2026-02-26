@@ -15,6 +15,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 
 import com.carmen.mijuego.Main;
 import com.carmen.mijuego.assets.Assets;
+import com.carmen.mijuego.ui.Fonts;
 
 public class MenuScreen implements Screen {
 
@@ -65,7 +66,8 @@ public class MenuScreen implements Screen {
         btnCredits = game.assets.get(Assets.SCREEN_MENU_BTN_CREDITS);
         btnAchievements = game.assets.get(Assets.SCREEN_MENU_BTN_ACHIEVEMENTS);
 
-        font = new BitmapFont();
+        // ✅ Fuente del juego
+        font = Fonts.main(game);
         font.getData().setScale(2.0f);
         layout = new GlyphLayout();
 
@@ -226,7 +228,6 @@ public class MenuScreen implements Screen {
         game.batch.setProjectionMatrix(camera.combined);
 
         game.batch.begin();
-
         game.batch.draw(bg, 0, 0, WORLD_W, WORLD_H);
 
         drawButton(btnGame, rGame, hoverGame, game.i18n.t("menu.play"));
@@ -242,7 +243,6 @@ public class MenuScreen implements Screen {
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
-        updateLayout();
         updateHowToLayout();
     }
 
@@ -252,6 +252,6 @@ public class MenuScreen implements Screen {
 
     @Override
     public void dispose() {
-        font.dispose();
+        // ✅ NO dispose(): la fuente la gestiona AssetManager
     }
 }

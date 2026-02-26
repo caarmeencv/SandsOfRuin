@@ -37,7 +37,7 @@ public class AudioManager {
     }
 
     // ==========================
-    // ✅ VIBRACION (CONTROLADA POR SETTINGS)
+    //VIBRACION (CONTROLADA POR SETTINGS)
     // ==========================
     public void vibrate(int ms) {
 

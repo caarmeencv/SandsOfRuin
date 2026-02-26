@@ -141,4 +141,8 @@ public final class AssetPaths {
     public static final String SFX_LIVE           = "audio/effects/Live.mp3";
     public static final String SFX_SOLDIER_DEAD   = "audio/effects/SoldierDead.mp3";
     public static final String SFX_GUN_RELOAD = "audio/effects/ReloadGun.mp3";
+
+    // ===== FONTS =====
+    public static final String FONT_MAIN_FNT = "fonts/fonts.fnt";
+    public static final String FONT_MAIN_PNG = "fonts/fonts.png";
 }

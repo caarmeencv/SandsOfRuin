@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.carmen.mijuego.Main;
 import com.carmen.mijuego.assets.Assets;
+import com.carmen.mijuego.ui.Fonts;
 
 public class CreditsScreen implements Screen {
 
@@ -26,11 +27,8 @@ public class CreditsScreen implements Screen {
 
     private Texture bg;
 
-    private BitmapFont fontTitle;
-    private BitmapFont fontMain;
-    private BitmapFont fontHint;
-
-    private GlyphLayout layout = new GlyphLayout();
+    private BitmapFont font;
+    private final GlyphLayout layout = new GlyphLayout();
 
     private float blinkTime = 0f;
 
@@ -46,14 +44,8 @@ public class CreditsScreen implements Screen {
 
         bg = game.assets.get(Assets.SCREEN_CREDITS_BG);
 
-        fontTitle = new BitmapFont();
-        fontTitle.getData().setScale(4.0f);
-
-        fontMain = new BitmapFont();
-        fontMain.getData().setScale(2.0f);
-
-        fontHint = new BitmapFont();
-        fontHint.getData().setScale(1.6f);
+        // ✅ Fuente del juego (1 sola)
+        font = Fonts.main(game);
     }
 
     @Override
@@ -89,19 +81,24 @@ public class CreditsScreen implements Screen {
         game.batch.draw(bg, 0, 0, WORLD_W, WORLD_H);
 
         // Título
-        float titleY = WORLD_H - 120f;
-        fontTitle.draw(game.batch, title, 0, titleY, WORLD_W, Align.center, false);
+        font.getData().setScale(4.0f);
+        font.draw(game.batch, title, 0, WORLD_H - 120f, WORLD_W, Align.center, false);
 
         // Texto principal
-        layout.setText(fontMain, creditsText, com.badlogic.gdx.graphics.Color.WHITE, WORLD_W * 0.8f, Align.center, true);
+        font.getData().setScale(2.0f);
+        layout.setText(font, creditsText, com.badlogic.gdx.graphics.Color.WHITE, WORLD_W * 0.8f, Align.center, true);
         float mainY = WORLD_H / 2f + layout.height / 2f - 40f;
-        fontMain.draw(game.batch, creditsText, 0, mainY, WORLD_W, Align.center, true);
+        font.draw(game.batch, creditsText, 0, mainY, WORLD_W, Align.center, true);
 
         // Hint parpadeo
+        font.getData().setScale(1.6f);
         float alpha = 0.4f + 0.6f * (0.5f + 0.5f * (float)Math.sin(blinkTime * 4f));
-        fontHint.setColor(1f, 1f, 1f, alpha);
-        fontHint.draw(game.batch, hintText, 0, 60f, WORLD_W, Align.center, false);
-        fontHint.setColor(1f, 1f, 1f, 1f);
+        font.setColor(1f, 1f, 1f, alpha);
+        font.draw(game.batch, hintText, 0, 60f, WORLD_W, Align.center, false);
+        Fonts.resetColor(font);
+
+        // Reset scale para no arrastrar a otras pantallas
+        font.getData().setScale(2.0f);
 
         game.batch.end();
     }
@@ -117,8 +114,6 @@ public class CreditsScreen implements Screen {
 
     @Override
     public void dispose() {
-        fontTitle.dispose();
-        fontMain.dispose();
-        fontHint.dispose();
+        // ✅ NO dispose()
     }
 }
