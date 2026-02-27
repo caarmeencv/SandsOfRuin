@@ -5,93 +5,126 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class WorldController {
 
+    // Velocidad de avance hacia la derecha
     private static final float SCROLL_FWD = 320f;
+
+    // Velocidad de retroceso hacia la izquierda
     private static final float SCROLL_BACK = 260f;
 
+    // Distancia total que retrocede al recibir knockback
     private static final float KNOCK_DIST = 140f;
+
+    // Velocidad a la que se aplica el knockback
     private static final float KNOCK_SPEED = 900f;
 
-    private float scrollX = 0f;
-    private float knockRemaining = 0f;
+    // Posición horizontal acumulada del mundo
+    private float scrollX;
 
-    private boolean frozen = false;
+    // Cantidad de distancia que queda por retroceder en knockback
+    private float knockRemaining;
 
-    /**
-     * Lógica de scroll (mundo) en función del input.
-     * Ahora incluye “freeze” cuando camRight alcanza FREEZE_CAM_RIGHT.
-     */
-    public void update(float delta, boolean left, boolean right, float viewportWidth) {
+    // Indica si el mundo está congelado (no se puede mover más)
+    private boolean frozen;
 
-        // Si ya está congelado, no se mueve nada.
+    // Actualiza el desplazamiento del mundo según input y delta time
+    public void update(float delta, boolean left, boolean right, float viewportW) {
+
+        // Si está congelado no permitimos movimiento
         if (frozen) return;
 
-        // Knockback (si aplica)
+        // Si hay knockback pendiente, se aplica primero
         if (knockRemaining > 0f) {
-            float step = KNOCK_SPEED * delta;
-            if (step > knockRemaining) step = knockRemaining;
-            scrollX -= step;
+
+            // Calculamos cuánto se retrocede en este frame
+            float step = Math.min(KNOCK_SPEED * delta, knockRemaining);
+
+            // Movemos el scroll hacia atrás
+            scrollX = Math.max(0f, scrollX - step);
+
+            // Restamos lo ya aplicado
             knockRemaining -= step;
-            if (scrollX < 0f) scrollX = 0f;
+
         } else {
+
+            // Movimiento normal hacia la derecha
             if (right) scrollX += SCROLL_FWD * delta;
-            if (left)  scrollX -= SCROLL_BACK * delta;
+
+            // Movimiento hacia la izquierda más lento
+            if (left) scrollX -= SCROLL_BACK * delta;
+
+            // Evitamos que el scroll sea negativo
             if (scrollX < 0f) scrollX = 0f;
         }
 
-        // Tras mover, comprobamos si toca congelar
-        clampAndMaybeFreeze(viewportWidth);
+        // Comprobamos si hay que congelar el mundo
+        clampAndFreezeIfNeeded(viewportW);
     }
 
-    /**
-     * Congela el mundo cuando el borde derecho de la cámara llega a FREEZE_CAM_RIGHT.
-     * camRight = scrollX + viewportWidth
-     */
-    private void clampAndMaybeFreeze(float viewportWidth) {
-        float camRight = scrollX + viewportWidth;
+    // Limita el scroll y congela el mundo si se llega al límite final
+    private void clampAndFreezeIfNeeded(float viewportW) {
 
-        if (camRight >= LevelConfig.FREEZE_CAM_RIGHT) {
-            // Ajustamos scrollX para que camRight quede EXACTAMENTE en FREEZE_CAM_RIGHT
-            scrollX = LevelConfig.FREEZE_CAM_RIGHT - viewportWidth;
-            if (scrollX < 0f) scrollX = 0f;
+        // Límite máximo permitido antes del freeze
+        float limitScroll = LevelConfig.FREEZE_CAM_RIGHT - viewportW;
 
+        // Si la cámara alcanza el punto de congelación
+        if (scrollX + viewportW >= LevelConfig.FREEZE_CAM_RIGHT) {
+
+            // Ajustamos exactamente al límite permitido
+            scrollX = Math.max(0f, limitScroll);
+
+            // Activamos congelación
             frozen = true;
-            knockRemaining = 0f; // importante: no seguir empujando hacia atrás
+
+            // Cancelamos cualquier knockback pendiente
+            knockRemaining = 0f;
         }
     }
 
+    // Aplica efecto de retroceso cuando el jugador recibe daño
     public void applyKnockback() {
-        // Si está congelado, no permitimos knockback (si no, “se movería”)
-        if (frozen) return;
-        knockRemaining = KNOCK_DIST;
+
+        // Solo si el mundo no está congelado
+        if (!frozen) knockRemaining = KNOCK_DIST;
     }
 
-    /**
-     * Cámara sigue al scrollX, pero si está congelado, se queda fija.
-     */
+    // Actualiza la posición de la cámara según el scroll actual
     public void updateCamera(OrthographicCamera cam, Viewport vp, float delta, boolean moving) {
 
-        // Por si alguien llama updateCamera sin llamar update()
-        // garantizamos que el freeze se aplique también aquí.
-        if (!frozen) {
-            clampAndMaybeFreeze(vp.getWorldWidth());
-        }
+        // Si no está congelado volvemos a comprobar límites
+        if (!frozen) clampAndFreezeIfNeeded(vp.getWorldWidth());
 
-        float target = scrollX + vp.getWorldWidth() / 2f;
+        // La cámara siempre debe centrarse respecto al scroll
+        float targetX = scrollX + vp.getWorldWidth() * 0.5f;
 
+        // Si el mundo se está moviendo, aplicamos suavizado
         if (!frozen && (moving || knockRemaining > 0f)) {
-            cam.position.x += (target - cam.position.x) * 10f * delta;
+
+            // Interpolación suave hacia la posición objetivo
+            cam.position.x += (targetX - cam.position.x) * 10f * delta;
+
         } else {
-            cam.position.x = target;
+
+            // Si está congelado o quieto, colocamos directamente
+            cam.position.x = targetX;
         }
 
+        // Actualizamos la cámara
         cam.update();
     }
 
-    public float getScrollX() { return scrollX; }
+    // Devuelve el desplazamiento actual del mundo
+    public float getScrollX() {
+        return scrollX;
+    }
 
-    public boolean isFrozen() { return frozen; }
+    // Indica si el mundo está congelado
+    public boolean isFrozen() {
+        return frozen;
+    }
 
+    // Reinicia el estado del controlador
     public void reset() {
+
         scrollX = 0f;
         knockRemaining = 0f;
         frozen = false;

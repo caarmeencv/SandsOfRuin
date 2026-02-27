@@ -1,0 +1,123 @@
+CHANGELOG - SANDS OF RUIN
+
+[12/01/2026]
+- Creación del proyecto en libGDX
+- Configuración inicial de Android Studio
+- Generación de estructura base del proyecto
+
+[13/01/2026]
+- Implementación inicial del parallax del desierto
+- Primer render funcional en pantalla
+
+[14/01/2026]
+- Creación y organización inicial de los assets gráficos
+- Diseño de fondos provisionales del desierto
+- Organización de carpetas dentro de assets
+
+[17/01/2026]
+- Implementación del personaje principal (Ayla)
+- Movimiento izquierda/derecha
+- Sistema de salto
+- Ajuste de físicas usando deltaTime
+
+[20/01/2026]
+- Implementación de cactus como primeros obstáculos
+- Sistema de colisiones jugador-obstáculo
+- Pérdida de vida al colisionar
+
+[23/01/2026]
+- Implementación de soldados enemigos
+- Sistema de disparo enemigo
+- Sistema de disparo del jugador
+- Colisiones bala-enemigo
+
+[26/01/2026]
+- Implementación de tanques enemigos
+- Ajuste de resistencia
+- Balance de dificultad entre enemigos
+
+[29/01/2026]
+- Sistema de aparición progresiva de enemigos por niveles
+- Ajuste de spawn dinámico
+- Optimización básica de colisiones
+
+[30/01/2026]
+- Implementación de música de fondo
+- Implementación de efectos de sonido (disparo y daño)
+
+[02/02/2026]
+- Rediseño completo del parallax del desierto
+- Cambio de diseño del personaje principal (Ayla)
+- Ajuste de hitbox tras rediseño
+
+[03/02/2026]
+- Implementación de la entrada a la pirámide desde DesertScreen
+- Detección de zona de transición
+
+[04/02/2026]
+- Creación de la fase interior de la pirámide
+- Configuración de fondo interior
+- Ajuste de cámara en segunda fase
+
+[05/02/2026]
+- Implementación del ataque de la momia
+- Sistema de disparo del boss
+- Ajuste de colisiones boss-jugador
+
+[06/02/2026]
+- Implementación del sistema de vida del boss
+- Ajuste de daño necesario para derrotarla
+
+[09/02/2026]
+- Implementación del tesoro final
+- Condición de victoria tras derrotar a la momia
+
+[10/02/2026]
+- Unión completa del flujo Desierto > Pirámide > Boss > Victoria
+- Corrección de errores de transición
+
+[13/02/2026]
+- Implementación completa del sistema de vidas en la fase pirámide
+- Ajustes de dificultad final
+
+[18/02/2026]
+- Unión definitiva del desierto con la pirámide de forma fluida
+- Mejora del HUD
+
+[19/02/2026]
+- Ajustes generales de jugabilidad
+- Corrección de bugs detectados en pruebas
+
+[20/02/2026]
+- Optimización de rendimiento
+- Limpieza y reorganización de código
+
+[21/02/2026]
+- Ajustes visuales finales en gameplay
+- Mejora de escalado en diferentes resoluciones
+
+[22/02/2026]
+- Pruebas completas de gameplay
+- Corrección de pequeños fallos
+
+[23/02/2026]
+- Ajustes finales de dificultad
+- Revisión completa del flujo de juego
+
+[24/02/2026]
+- Implementación de pantalla de Credits
+- Implementación de pantalla de Options
+- Implementación de pantalla de HowToPlay
+- Integración de las pantallas en el menú principal
+
+[25/02/2026]
+- Ajustes en sistema de vidas en pirámide
+- Mejora de diseño en Credits y HowToPlay
+- Implementación de fuente no nativa (BitmapFont personalizada)
+
+[26/02/2026]
+- Implementación completa de sistema de Records (Top 10)
+- Guardado persistente de mejores tiempos
+- Ordenación automática
+- Ajustes visuales finales
+- Revisión completa previa a entrega

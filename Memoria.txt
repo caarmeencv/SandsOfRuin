@@ -1,0 +1,131 @@
+MEMORIA DEL PROYECTO
+
+Proyecto: SANDS OF RUIN AYLA SAHAR
+Autora: Carmen Calo Vázquez
+Ciclo: DAM 2 - Programación Multimedia y Dispositivos Móviles
+
+INTRODUCCIÓN Y MOTIVACIÓN
+
+El proyecto Sands of Ruin: Ayla Sahar parte del anteproyecto presentado previamente. En el se plantea un juego de acción 
+ambientado en un entorno bélico en el desierto con una fase final en el interior de una pirámide.
+
+El objetivo principal ha sido desarrollar un videojuego completo para Android utilizando el framework LibGDX, aplicando 
+los conocimientos adquiridos durante el curso y cumpliendo todos los requisitos obligatorios establecidos para el proyecto.
+
+Uno de los mayores retos ha sido diseñar una dinámica de juego suficientemente compleja, evitando una logica simple e 
+incorporando múltiples pantallas, detección de colisiones, persistencia de datos y uso de hardware del dispositivo.
+
+TECNOLOGIAS Y HERRAMIENTAS UTILIZADAS
+
+ - Motor de desarrollo: LibGDX
+ - Lenguaje de programación: Java
+ - Entorno de desarrollo: Android Studio
+ - Gestión de recursos: carpeta assets
+ - Persistencia de datos: com.badlogic.gdx.Preferences
+ - Gestión de pantallas: interfaz Screen
+ - Control de resolución: Viewport (FitViewport)
+ - Control del ciclo de vida: ApplicationListener
+
+El proyecto está estructurado en distintos paquetes como screens, enemies, characters, settings, ui y assets, siguiendo 
+una organización modular que facilita el mantenimiento del código.
+
+AMBIENTACIÓN
+
+El juego se desarrolla en dos escenarios principales.
+ - Fase exterior (Desierto):
+		 - Entorno compuesto por dunas y ruinas.
+		 - Obstáculos como cactus.
+		 - Enemigos como soldados y tanques.
+		 - Música ambiental con efectos de tensión.
+
+ - Fase interior (Pirámide):
+		 - Decoración con jeroglíficos y ambientación egipcia.
+		 - Cambio de música para generar sensación de misterio.
+		 - Aparición del jefe final (momia).
+		 - Tesoro final tras derrotarla.
+
+Se ha buscado que tanto la parte visual como sonora refuercen la sensación de progresión y dificultad.
+
+MECÁNICA DEL JUEGO
+
+El juego es un parallax lateral con desplazamiento horizontal.
+
+Personaje principal:
+ - Ayla Sahar
+ - 5 vidas iniciales
+ - Movimiento lateral
+ - Salto
+ - Disparo (el arma contiene 2 disparos) con recarga de 3 segundos
+ - Disparo especial (el impacto es el doble que el disparo normal) con 15 segundos de recarga
+
+Enemigos:
+ - Soldados: requieren dos impactos
+ - Tanques: requieren tres impactos
+ - Momia final: requiere 5 impactos
+
+Sistema general:
+ - Contador de tiempo visible en pantalla desde el inicio del nivel
+ - Sistema de vidas representado gráficamente
+ - Detección de colisiones entre jugador, enemigos, proyectiles y obstáculos
+ - Uso de deltaTime para que el movimiento no dependa del rendimiento del dispositivo
+
+PANTALLAS DEL JUEGO
+
+El juego incluye las siguientes pantallas:
+ - Pantalla de inicio
+ - Pantalla de menú principal
+ - Pantalla de juego exterior
+ - Pantalla de juego interior
+ - Pantalla de opciones
+ - Pantalla de récords
+ - Pantalla de créditos
+ - Pantalla de victoria
+ - Pantalla de derrota
+ - Pantalla de pausa
+ - Pantalla de ayuda o tutorial
+Cada pantalla implementa la interfaz Screen y respeta el ciclo de vida definido por LibGDX.
+
+USO DE HARDWARE
+
+Se han utilizado dos categorías distintas de hardware del dispositivo.
+
+Vibrador:
+ - Se activa cuando el personaje pierde una vida
+ - Puede activarse o desactivarse desde opciones
+
+Acelerómetro:
+ - Permite controlar el salto del personaje principal
+ - Puede activarse o desactivarse desde opciones
+ - Aumenta la dificultad cuando está activo
+
+PERSISTENCIA DE DATOS
+
+Se utiliza la clase Preferences de LibGDX para:
+ - Guardar el idioma seleccionado
+ - Guardar los récords
+ - Guardar la configuración de efectos de sonido, música, vibración y acelerómetro
+Los datos permanecen almacenados aunque se cierre la aplicación.
+
+GRÁFICOS Y SONIDO
+
+ - Uso de sprites animados para personaje y enemigos
+ - Uso de TextureRegion y animaciones por frames
+ - Música diferente para cada escenario
+ - Efectos de sonido para cada acción o evento
+ - Fuente personalizada no nativa de Android
+ - Icono propio de la aplicación
+
+DIFICULTADES ENCONTRADAS
+
+ - Ajuste correcto de los Viewports para distintos tamaños de pantalla
+ - Sincronización del contador de tiempo y de las vidas entre pantallas
+ - Gestión adecuada de colisiones
+ - Organización modular del proyecto a medida que crecía
+ - Control del flujo entre pantallas y reinicio del juego
+
+CONCLUSIÓN
+
+Este proyecto ha sido exigente. Ha requerido planificación, han habido momentos de frustración, pero también una gran satisfacción 
+al ver cómo una idea inicial se convertía en un videojuego funcional.
+He mejorado en organización del código, estructuración de proyectos grandes, uso de sensores del dispositivo y gestión de recursos multimedia.
+En conclusión, ha sido una experiencia completa que me ha permitido aplicar y consolidar los conocimientos adquiridos durante el curso.

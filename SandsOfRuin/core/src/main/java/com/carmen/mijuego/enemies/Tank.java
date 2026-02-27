@@ -6,64 +6,81 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
+
 import com.carmen.mijuego.assets.Assets;
 import com.carmen.mijuego.audio.AudioManager;
 
 public class Tank {
 
+    // Esto sirve para reproducir sonidos del tanque como moverse y explotar
     private final AudioManager audio;
 
+    // Estados del tanque
+    // MOVE significa que se está moviendo
+    // IDLE significa que se para cerca de Ayla
+    // DESTROY significa que está haciendo la animación de destruirse
+    // DEAD significa que ya está destruido y parpadea
+    // GONE significa que ya desapareció del juego y no se dibuja ni colisiona
     private enum State { MOVE, IDLE, DESTROY, DEAD, GONE }
 
-    private static final int MOVE_FRAMES = 4;
-    private static final int DESTROY_FRAMES = 15;
+    // Número de frames del spritesheet de movimiento y de destrucción
+    private static final int MOVE_FRAMES = 4, DESTROY_FRAMES = 15;
 
-    // ✅ MÁS PEQUEÑO
+    // Escala visual del tanque
     private static final float SCALE = 1.35f;
 
-    // IA
-    private static final float MOVE_SPEED = 230f;
-    private static final float STOP_DISTANCE = 520f;
+    // Velocidad del tanque y distancia donde deja de avanzar para quedarse a rango
+    private static final float MOVE_SPEED = 230f, STOP_DISTANCE = 520f;
 
+    // Vida del tanque en impactos
+    // Con 3 impactos entra en destrucción
     private static final int HP = 3;
     private int hitsTaken = 0;
 
+    // Ajuste visual para dibujar el tanque un poco más abajo o mejor alineado con el suelo
     private static final float FOOT_OFFSET = 10f;
 
-    private static final float MOVE_FRAME_TIME = 0.10f;
-    private static final float DESTROY_FRAME_TIME = 0.06f;
-
+    // Tiempo entre disparos del tanque
     private static final float SHOOT_COOLDOWN = 2.2f;
+
+    // Temporizador que acumula tiempo y cuando llega al cooldown permite disparar
     private float shootTimer = 0f;
 
-    // ✅ DISPARO MÁS ABAJO (offset del cañón dentro del sprite)
-    // Ajusta este valor si lo quieres aún más bajo/alto:
-    private static final float MUZZLE_Y_RATIO = 0.30f; // 0..1 (más bajo = menor)
-    private static final float MUZZLE_X_RATIO = 0.88f; // cerca del frontal del tanque
+    // Esto sirve para saber desde qué punto exacto sale el disparo del tanque
+    // Se usa como porcentaje del tamaño del tanque
+    private static final float MUZZLE_Y_RATIO = 0.30f;
+    private static final float MUZZLE_X_RATIO = 0.88f;
 
+    // Parpadeo cuando muere
     private static final int BLINK_TIMES = 3;
     private static final float BLINK_INTERVAL = 0.10f;
+
     private float blinkTimer = 0f;
     private int blinkToggles = 0;
     private boolean visible = true;
 
+    // Posición del tanque
     private float x, y;
+
+    // Dirección a la que mira para dibujar girado y para calcular el cañón
     private boolean facingRight = false;
 
+    // Estado actual y tiempo de animación
     private State state = State.MOVE;
     private float stateTime = 0f;
 
-    private final Texture idleTex;
-    private final Texture deadTex;
+    // Texturas para idle y muerto
+    // Movimiento y destrucción son animaciones
+    private final Texture idleTex, deadTex;
+    private final Animation<TextureRegion> moveAnim, destroyAnim;
 
-    private final Animation<TextureRegion> moveAnim;
-    private final Animation<TextureRegion> destroyAnim;
+    // Tamaño real del tanque ya escalado
+    private final float width, height;
 
-    private final float width;
-    private final float height;
-
+    // Hitbox del tanque
     private final Rectangle bounds = new Rectangle();
 
+    // Id del sonido en bucle mientras se mueve
     private long moveLoopId = -1;
 
     public Tank(AudioManager audio,
@@ -74,86 +91,111 @@ public class Tank {
                 float startX,
                 float startY) {
 
+        // Guardo el audio
         this.audio = audio;
 
-        this.idleTex = tankIdle;
-        this.deadTex = tankDead;
+        // Guardo las texturas
+        idleTex = tankIdle;
+        deadTex = tankDead;
 
-        this.x = startX;
-        this.y = startY;
+        // Posición inicial
+        x = startX;
+        y = startY;
 
+        // Calculo el tamaño de un frame del spritesheet de movimiento
         int moveFrameW = tankMoveSheet.getWidth() / MOVE_FRAMES;
         int moveFrameH = tankMoveSheet.getHeight();
 
-        this.width = moveFrameW * SCALE;
-        this.height = moveFrameH * SCALE;
+        // Calculo el tamaño final del tanque en pantalla
+        width = moveFrameW * SCALE;
+        height = moveFrameH * SCALE;
 
-        this.moveAnim = buildAnimHorizontal(tankMoveSheet, MOVE_FRAMES, MOVE_FRAME_TIME, true);
-        this.destroyAnim = buildAnimHorizontal(tankDestroySheet, DESTROY_FRAMES, DESTROY_FRAME_TIME, false);
+        // Creo animación de movimiento en bucle
+        moveAnim = buildAnimHorizontal(tankMoveSheet, MOVE_FRAMES, 0.10f, true);
 
+        // Creo animación de destrucción que se reproduce una sola vez
+        destroyAnim = buildAnimHorizontal(tankDestroySheet, DESTROY_FRAMES, 0.06f, false);
+
+        // Creo el hitbox inicial
         updateBounds();
     }
 
     private Animation<TextureRegion> buildAnimHorizontal(Texture sheet, int frames, float frameTime, boolean loop) {
+
+        // Aquí calculo el tamaño de cada frame dividiendo el ancho total entre el número de frames
         int frameW = sheet.getWidth() / frames;
         int frameH = sheet.getHeight();
 
+        // Corto el spritesheet en frames
         TextureRegion[][] split = TextureRegion.split(sheet, frameW, frameH);
 
+        // Me guardo los frames de la primera fila
         Array<TextureRegion> regions = new Array<>(frames);
         for (int i = 0; i < frames; i++) regions.add(split[0][i]);
 
+        // Creo la animación con el tiempo por frame
         Animation<TextureRegion> anim = new Animation<>(frameTime, regions);
-        anim.setPlayMode(loop ? Animation.PlayMode.LOOP : Animation.PlayMode.NORMAL);
+
+        // Si loop es true se repite, si no se reproduce una sola vez
+        if (loop) anim.setPlayMode(Animation.PlayMode.LOOP);
+        else anim.setPlayMode(Animation.PlayMode.NORMAL);
+
         return anim;
     }
 
     public void update(float delta, float aylaX) {
+
+        // Avanzo tiempo de animación
         stateTime += delta;
 
-        if (state == State.GONE) {
-            stopMoveLoop();
-            return;
-        }
+        // Si ya desapareció, solo me aseguro de parar el sonido
+        if (state == State.GONE) { stopMoveLoop(); return; }
 
+        // Si está en destrucción, espero a que termine la animación para pasar a muerto con parpadeo
         if (state == State.DESTROY) {
             stopMoveLoop();
-            if (destroyAnim.isAnimationFinished(stateTime)) {
-                enterDeadBlink();
-            }
+            if (destroyAnim.isAnimationFinished(stateTime)) enterDeadBlink();
             updateBounds();
             return;
         }
 
+        // Si está muerto, hace el parpadeo y cuando termina desaparece
         if (state == State.DEAD) {
             stopMoveLoop();
+
             blinkTimer += delta;
             if (blinkTimer >= BLINK_INTERVAL) {
                 blinkTimer = 0f;
                 visible = !visible;
                 blinkToggles++;
 
-                if (blinkToggles >= BLINK_TIMES * 2) {
-                    state = State.GONE;
-                }
+                // Se multiplica por dos porque cuenta visible e invisible
+                if (blinkToggles >= BLINK_TIMES * 2) state = State.GONE;
             }
+
             updateBounds();
             return;
         }
 
+        // El tanque mira hacia Ayla
         facingRight = aylaX > x;
 
+        // Distancia horizontal a Ayla
         float dx = aylaX - x;
         float absDx = Math.abs(dx);
 
+        // Si está cerca, se queda quieto
         if (absDx <= STOP_DISTANCE) {
             state = State.IDLE;
             stopMoveLoop();
         } else {
+            // Si está lejos, se mueve hacia ella
             state = State.MOVE;
-            float dir = dx > 0 ? 1f : -1f;
-            x += dir * MOVE_SPEED * delta;
 
+            float dir = -1f;
+            if (dx > 0f) dir = 1f;
+
+            x += dir * MOVE_SPEED * delta;
             startMoveLoop();
         }
 
@@ -161,51 +203,65 @@ public class Tank {
     }
 
     private void startMoveLoop() {
-        if (moveLoopId == -1) {
-            moveLoopId = audio.loopSfx(Assets.SFX_TANK_MOVE, 0.35f);
-        }
+
+        // Si no está sonando el sonido en bucle del movimiento, lo inicio
+        if (moveLoopId == -1) moveLoopId = audio.loopSfx(Assets.SFX_TANK_MOVE, 0.35f);
     }
 
     private void stopMoveLoop() {
+
+        // Si está sonando, lo paro y reseteo el id
         if (moveLoopId != -1) {
             audio.stopLoop(Assets.SFX_TANK_MOVE, moveLoopId);
             moveLoopId = -1;
         }
     }
 
-    /**
-     * ✅ Ahora puede disparar tanto en IDLE como en MOVE.
-     * Solo se bloquea si está muriendo/destrozado/gone.
-     */
     public boolean canShoot(float delta) {
+
+        // Si está muerto, destruyéndose o ya desapareció, no puede disparar
         if (state == State.DEAD || state == State.DESTROY || state == State.GONE) return false;
 
-        // ✅ ya NO reseteamos el timer al moverse
+        // Sumo tiempo al temporizador
         shootTimer += delta;
 
+        // Cuando llega al cooldown, permito disparo y reseteo el timer
         if (shootTimer >= SHOOT_COOLDOWN) {
             shootTimer = 0f;
+
+            // Aquí reproduces un sonido como aviso o explosión de disparo
             audio.playSfx(Assets.SFX_EXPLOSION_GRENADE);
+
             return true;
         }
+
         return false;
     }
 
     public void hitByAylaBullet() {
+
+        // Si está en estados donde no debe recibir impactos, no hago nada
         if (state == State.DESTROY || state == State.DEAD || state == State.GONE) return;
 
+        // Sumo impactos recibidos
         hitsTaken++;
+
+        // Si ya llegó a su vida máxima en impactos, empiezo destrucción
         if (hitsTaken >= HP) {
             state = State.DESTROY;
             stateTime = 0f;
 
+            // Sonido de explosión del tanque
             audio.playSfx(Assets.SFX_EXPLOSION_TANK);
 
+            // Quito hitbox para que no choque mientras se destruye
             bounds.set(0, 0, 0, 0);
         }
     }
 
     private void enterDeadBlink() {
+
+        // Entro en estado muerto y preparo el parpadeo
         state = State.DEAD;
         stateTime = 0f;
 
@@ -213,57 +269,67 @@ public class Tank {
         blinkToggles = 0;
         visible = true;
 
+        // Quito hitbox para que ya no colisione
         bounds.set(0, 0, 0, 0);
     }
 
     public void draw(SpriteBatch batch) {
+
+        // Si ya desapareció no dibujo
         if (state == State.GONE) return;
+
+        // Si está muerto y justo toca invisible, no dibujo este frame
         if (state == State.DEAD && !visible) return;
 
         float drawY = y - FOOT_OFFSET;
 
-        if (state == State.DEAD) {
-            drawTexture(batch, deadTex, drawY);
-            return;
-        }
+        // Si está muerto dibujo la textura de muerto y ya está
+        if (state == State.DEAD) { drawThing(batch, deadTex, null, drawY); return; }
 
+        // Si se está destruyendo dibujo la animación de destrucción
         if (state == State.DESTROY) {
-            TextureRegion f = destroyAnim.getKeyFrame(stateTime, false);
-            drawRegion(batch, f, drawY);
+            drawThing(batch, null, destroyAnim.getKeyFrame(stateTime, false), drawY);
             return;
         }
 
-        if (state == State.IDLE) {
-            drawTexture(batch, idleTex, drawY);
-            return;
+        // Si está quieto dibujo la textura idle
+        if (state == State.IDLE) { drawThing(batch, idleTex, null, drawY); return; }
+
+        // Si se está moviendo dibujo la animación de movimiento
+        drawThing(batch, null, moveAnim.getKeyFrame(stateTime, true), drawY);
+    }
+
+    private void drawThing(SpriteBatch batch, Texture tex, TextureRegion r, float drawY) {
+
+        // Si me pasan un frame de animación, dibujo ese frame
+        // Si no, dibujo una textura normal
+        if (r != null) {
+            if (facingRight) batch.draw(r, x, drawY, width, height);
+            else batch.draw(r, x + width, drawY, -width, height);
+        } else {
+            if (facingRight) batch.draw(tex, x, drawY, width, height);
+            else batch.draw(tex, x + width, drawY, -width, height);
         }
-
-        TextureRegion frame = moveAnim.getKeyFrame(stateTime, true);
-        drawRegion(batch, frame, drawY);
-    }
-
-    private void drawTexture(SpriteBatch batch, Texture tex, float drawY) {
-        if (facingRight) batch.draw(tex, x, drawY, width, height);
-        else batch.draw(tex, x + width, drawY, -width, height);
-    }
-
-    private void drawRegion(SpriteBatch batch, TextureRegion r, float drawY) {
-        if (facingRight) batch.draw(r, x, drawY, width, height);
-        else batch.draw(r, x + width, drawY, -width, height);
     }
 
     private void updateBounds() {
+
+        // Si está destruyéndose, muerto o desaparecido, el hitbox se borra
         if (state == State.DESTROY || state == State.DEAD || state == State.GONE) {
             bounds.set(0, 0, 0, 0);
             return;
         }
 
+        // El hitbox del tanque es un rectángulo más pequeño que la imagen
+        // Para que la colisión sea más justa, solo uso parte del ancho y parte del alto
         float hitW = width * 0.75f;
         float hitH = height * 0.40f;
 
+        // Centro el hitbox dentro del tanque
         float hitX = x + (width - hitW) / 2f;
         float hitY = y;
 
+        // Tamaño mínimo por seguridad
         if (hitW < 10f) hitW = 10f;
         if (hitH < 10f) hitH = 10f;
 
@@ -276,9 +342,7 @@ public class Tank {
     public boolean isDestroying() { return state == State.DESTROY; }
     public boolean isGone() { return state == State.GONE; }
 
-    public boolean isOffScreenLeft(float camLeft) {
-        return x + width < camLeft - 700f;
-    }
+    public boolean isOffScreenLeft(float camLeft) { return x + width < camLeft - 700f; }
 
     public float getX() { return x; }
     public float getY() { return y; }
@@ -286,20 +350,19 @@ public class Tank {
     public float getHeight() { return height; }
     public boolean isFacingRight() { return facingRight; }
 
-    // =========================================================
-    // ✅ NUEVO: punto de salida del disparo (para el BulletSystem)
-    // =========================================================
     public float getMuzzleX() {
-        if (facingRight) {
-            return x + width * MUZZLE_X_RATIO;
-        } else {
-            return x + width * (1f - MUZZLE_X_RATIO);
-        }
+
+        // Esto devuelve la posición X del cañón para disparar desde ahí
+        // Si mira a la derecha uso un porcentaje hacia la derecha
+        // Si mira a la izquierda invierto el porcentaje para que salga del otro lado
+        if (facingRight) return x + width * MUZZLE_X_RATIO;
+        return x + width * (1f - MUZZLE_X_RATIO);
     }
 
     public float getMuzzleY() {
-        // base visual del tanque (drawY) = y - FOOT_OFFSET
-        float drawY = y - FOOT_OFFSET;
-        return drawY + height * MUZZLE_Y_RATIO;
+
+        // Esto devuelve la posición Y del cañón usando el porcentaje del alto
+        // También tiene en cuenta el offset del dibujo para que coincida con el sprite
+        return (y - FOOT_OFFSET) + height * MUZZLE_Y_RATIO;
     }
 }
